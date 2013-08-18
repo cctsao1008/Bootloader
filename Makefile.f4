@@ -2,7 +2,13 @@
 # PX4 bootloader build rules for STM32F4 targets.
 #
 
+ifeq ($(BOARD),FC)
+PRODUCT		 = tmr$(TARGET)_bl
+else ifeq ($(BOARD),DISCOVERY)
+PRODUCT		 = stm32$(TARGET)_bl
+else
 PRODUCT		 = px4$(TARGET)_bl
+endif
 
 OPENOCD		?= openocd
 

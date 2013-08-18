@@ -76,6 +76,24 @@ static struct {
 # define BOARD_FUNC_USART		GPIO_AF7
 #endif
 
+#ifdef BOARD_FC
+# define BOARD_TYPE			5
+
+# define OSC_FREQ			8
+
+# define BOARD_LED_ON
+# define BOARD_LED_OFF
+
+# define BOARD_USART			USART1
+# define BOARD_PORT_USART		PORTB
+# define BOARD_USART_CLOCK_REGISTER	RCC_APB2ENR
+# define BOARD_USART_CLOCK_BIT		RCC_APB2ENR_USART1EN
+# define BOARD_PIN_TX			GPIO6
+# define BOARD_PIN_RX			GPIO7
+# define BOARD_CLOCK_USART_PINS		RCC_AHB1ENR_IOPBEN
+# define BOARD_FUNC_USART		GPIO_AF7
+#endif
+
 #ifdef BOARD_DISCOVERY
 # define BOARD_TYPE			99
 
@@ -119,6 +137,7 @@ static void board_init(void);
 /* standard clocking for all F4 boards */
 static const clock_scale_t clock_setup =
 {
+#ifdef BOARD_FMU
 	.pllm = OSC_FREQ,
 	.plln = 336,
 	.pllp = 2,
@@ -130,12 +149,28 @@ static const clock_scale_t clock_setup =
 	.flash_config = FLASH_ICE | FLASH_DCE | FLASH_LATENCY_5WS,
 	.apb1_frequency = 42000000,
 	.apb2_frequency = 84000000,
+#endif
+
+#ifdef BOARD_FC
+	.pllm = OSC_FREQ,
+	.plln = 336,
+	.pllp = 2,
+	.pllq = 7,
+	.hpre = RCC_CFGR_HPRE_DIV_NONE,
+	.ppre1 = RCC_CFGR_PPRE_DIV_4,
+	.ppre2 = RCC_CFGR_PPRE_DIV_2,
+	.power_save = 0,
+	.flash_config = FLASH_ICE | FLASH_DCE | FLASH_LATENCY_5WS,
+	.apb1_frequency = 42000000,
+	.apb2_frequency = 84000000,
+#endif
+
 };
 
 static void
 board_init(void)
 {
-
+#ifdef BOARD_FMU
 	/* initialise LEDs */
 	rcc_peripheral_enable_clock(&RCC_AHB1ENR, BOARD_CLOCK_LEDS);
 	gpio_mode_setup(
@@ -151,6 +186,7 @@ board_init(void)
 	BOARD_LED_ON (
 		BOARD_PORT_LEDS,
 		BOARD_PIN_LED_BOOTLOADER | BOARD_PIN_LED_ACTIVITY);
+#endif
 
 #ifdef INTERFACE_USART
 	/* configure usart pins */
@@ -197,10 +233,18 @@ led_on(unsigned led)
 {
 	switch (led) {
 	case LED_ACTIVITY:
+        #ifdef BOARD_FC
+
+        #else
 		BOARD_LED_ON (BOARD_PORT_LEDS, BOARD_PIN_LED_ACTIVITY);
+        #endif
 		break;
 	case LED_BOOTLOADER:
+        #ifdef BOARD_FC
+
+        #else
 		BOARD_LED_ON (BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
+        #endif
 		break;
 	}
 }
@@ -210,10 +254,18 @@ led_off(unsigned led)
 {
 	switch (led) {
 	case LED_ACTIVITY:
+        #ifdef BOARD_FC
+
+        #else
 		BOARD_LED_OFF (BOARD_PORT_LEDS, BOARD_PIN_LED_ACTIVITY);
+        #endif
 		break;
 	case LED_BOOTLOADER:
+        #ifdef BOARD_FC
+
+        #else
 		BOARD_LED_OFF (BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
+        #endif
 		break;
 	}
 }
@@ -223,10 +275,18 @@ led_toggle(unsigned led)
 {
 	switch (led) {
 	case LED_ACTIVITY:
+        #ifdef BOARD_FC
+
+        #else
 		gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_ACTIVITY);
+        #endif
 		break;
 	case LED_BOOTLOADER:
+        #ifdef BOARD_FC
+
+        #else
 		gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
+        #endif
 		break;
 	}
 }
