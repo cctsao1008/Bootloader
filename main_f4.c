@@ -152,7 +152,7 @@ static void board_init(void);
 /* standard clocking for all F4 boards */
 static const clock_scale_t clock_setup =
 {
-#ifdef BOARD_FMU
+#if defined(BOARD_FMU)
 	.pllm = OSC_FREQ,
 	.plln = 336,
 	.pllp = 2,
@@ -164,9 +164,7 @@ static const clock_scale_t clock_setup =
 	.flash_config = FLASH_ICE | FLASH_DCE | FLASH_LATENCY_5WS,
 	.apb1_frequency = 42000000,
 	.apb2_frequency = 84000000,
-#endif
-
-#ifdef BOARD_FC
+#elif defined(BOARD_FC)
 	.pllm = OSC_FREQ,
 	.plln = 336,
 	.pllp = 2,
@@ -182,16 +180,16 @@ static const clock_scale_t clock_setup =
 };
 
 #ifdef BOARD_FC
-PCA_I2C_DEVICE pca_i2c_dev =
+i2c_device_t pca_i2c_dev =
 {
-    .i2c = BOARD_I2C;
-    .port = BOARD_PORT_I2C;
-    .mode_af = BOARD_FUNC_I2C;
-    .gpio_scl = BOARD_PIN_SCL;
-    .gpio_sda = BOARD_PIN_SDA;
-    .fast_mode = true;
-    .auto_increment = true; // For PCA9533 only
-}
+    .i2c = BOARD_I2C,
+    .port = BOARD_PORT_I2C,
+    .mode_af = BOARD_FUNC_I2C,
+    .gpio_scl = BOARD_PIN_SCL,
+    .gpio_sda = BOARD_PIN_SDA,
+    .fast_mode = true,
+    .auto_increment = true, // For PCA9533 only
+};
 #endif
 
 static void

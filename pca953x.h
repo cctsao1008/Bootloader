@@ -29,7 +29,7 @@
 #define LED2           0x04
 #define LED3           0x06
 
-typedef struct tag_pca_i2c_device
+typedef struct
 {
     u32 i2c;
     u32 port;
@@ -38,9 +38,9 @@ typedef struct tag_pca_i2c_device
     u16 gpio_sda;
     u8  fast_mode;
     u8  auto_increment; // For PCA9533 only
-}PCA_I2C_DEVICE;
+}i2c_device_t;
 
-typedef union tag_pca9533
+typedef union
 {
     u8 input ;
     u8 psc0 ;
@@ -61,7 +61,7 @@ typedef union tag_pca9533
         u8      : 8 ;
         u8      : 8 ;
     };
-}PCA9533_MM;
+}pca9533_t;
 
 //4-bit I2C-bus and SMBus I/O port
 #define PCA9536_ADDR  0x41
@@ -69,7 +69,7 @@ typedef union tag_pca9533
 #define REG_POLARITY   0x02
 #define REG_CONFIG     0x03
 
-typedef union tag_pca9536
+typedef union
 {
     u8 input ;
     u8 output ;
@@ -102,8 +102,8 @@ typedef union tag_pca9536
         u8 cx3 : 1 ;
         u8     : 4 ;
     };
-}PCA9536_MM;
+}pca9536_t;
 
-u32 pca953x_init(PCA_I2C_DEVICE i2c_dev);
+u32 pca953x_init(i2c_device_t i2c_dev);
 
 #endif  /* _PCA953X_H */

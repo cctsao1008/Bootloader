@@ -11,7 +11,7 @@
 
 u8 auto_incresment = true, i2c_bus = 0;
 
-PCA9533_MM pca9533_mm = {
+pca9533_t pca9533_tbl = {
     .input = 0x00,
     .psc0 = 0x00,
     .pwm0 = 0x00,
@@ -23,11 +23,11 @@ PCA9533_MM pca9533_mm = {
     .led3 = LED_ON,
 } ;
 
-PCA9536_MM pca9536_mm = {
+pca9536_t pca9536_tbl = {
     .input = 0x00,
     .output = 0x00,
     .polarity = 0x00,
-    .config = 0x00
+    .config = 0x00,
 } ;
 
 void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count);
@@ -35,7 +35,7 @@ void i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count);
 u32 i2c_setup(u32 i2c, u8 fast_mode);
 void i2c_error(void);
 
-u32 pca953x_init(PCA_I2C_DEVICE i2c_dev)
+u32 pca953x_init(i2c_device_t i2c_dev)
 {
     u32 i2c = 0;
     i2c = i2c_setup(i2c_dev.i2c, i2c_dev.fast_mode);
@@ -43,8 +43,8 @@ u32 pca953x_init(PCA_I2C_DEVICE i2c_dev)
     if(i2c == false)
         goto error ;
 
-    i2c_write(i2c, PCA9533_ADDR, 0x0, (u8 *)&pca9533_mm, sizeof(PCA9533_MM));
-    i2c_write(i2c, PCA9536_ADDR, 0x0, (u8 *)&pca9536_mm, sizeof(PCA9533_MM));
+    i2c_write(i2c, PCA9533_ADDR, 0x0, (u8 *)&pca9533_tbl, sizeof(pca9533_t));
+    i2c_write(i2c, PCA9536_ADDR, 0x0, (u8 *)&pca9536_tbl, sizeof(pca9536_t));
 
 error :
     return i2c ;
@@ -113,7 +113,8 @@ cleanup:
 
 void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 {
-	u32 reg32, i;
+    volatile u32 reg32 = 0;
+	u32 i;
 
     // I2C Start
 	/* Send START condition. */
@@ -134,6 +135,7 @@ void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 
 	/* Cleaning ADDR condition sequence. */
 	reg32 = I2C_SR2(i2c);
+	//reg32 = reg32;
 
     // I2C EV8 and Data
 	/* Sending the data. */
@@ -155,7 +157,7 @@ void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
         {
             if((i+1) == count)
             {
-                if(addr = PCA9536_ADDR)
+                if(addr == PCA9536_ADDR)
                 {
                     i2c_send_data(i2c, reg + i); /* Sent register address that we want to talk to */
 	                while (!(I2C_SR1(i2c) & I2C_SR1_BTF));
@@ -171,7 +173,7 @@ void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
                 /* After the last byte we have to wait for TxE too. */
                 while (!(I2C_SR1(i2c) & (I2C_SR1_BTF | I2C_SR1_TxE)));
             }
-            else if(addr = PCA9533_ADDR)
+            else if(addr == PCA9533_ADDR)
             {
                 if(auto_incresment != true)
                 {
@@ -182,7 +184,7 @@ void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
                 i2c_send_data(i2c, (u8)(*(data + i)));
                 while (!(I2C_SR1(i2c) & I2C_SR1_BTF));
             }
-            else if(addr = PCA9536_ADDR)
+            else if(addr == PCA9536_ADDR)
             {
                 i2c_send_data(i2c, reg + i); /* Sent register address that we want to talk to */
 	            while (!(I2C_SR1(i2c) & I2C_SR1_BTF));
