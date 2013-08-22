@@ -19,11 +19,17 @@ JTAGCONFIG ?= interface/olimex-jtag-tiny.cfg
 PX4_BOOTLOADER_DELAY	?= 5000
 
 SRCS		 = $(COMMON_SRCS) main_f4.c
+
 ifeq ($(INTERFACE),USB)
 SRCS		+= cdcacm.c
 endif
+
 ifeq ($(INTERFACE),USART)
 SRCS		+= usart.c
+endif
+
+ifeq ($(BOARD),FC)
+SRCS		+= pca953x.c
 endif
 
 FLAGS		+= -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \

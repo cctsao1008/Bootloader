@@ -10,6 +10,11 @@
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/systick.h>
 
+#ifdef BOARD_FC
+#include <libopencm3/stm32/i2c.h>
+#include "pca953x.h"
+#endif
+
 #include "bl.h"
 
 /* flash parameters that we should not really know */
@@ -45,7 +50,7 @@ static struct {
 # define BOARD_LED_OFF			gpio_set
 
 # define BOARD_USART			USART1
-# define BOARD_PORT_USART		PORTB
+# define BOARD_PORT_USART		GPIOB
 # define BOARD_USART_CLOCK_REGISTER	RCC_APB2ENR
 # define BOARD_USART_CLOCK_BIT		RCC_APB2ENR_USART1EN
 # define BOARD_PIN_TX			GPIO6
@@ -69,7 +74,7 @@ static struct {
 # define BOARD_USART_CLOCK_REGISTER	RCC_APB1ENR
 # define BOARD_USART_CLOCK_BIT		RCC_APB1ENR_USART2EN
 # define BOARD_USART			USART2
-# define BOARD_PORT_USART		PORTD
+# define BOARD_PORT_USART		GPIOD
 # define BOARD_PIN_TX			GPIO5
 # define BOARD_PIN_RX			GPIO6
 # define BOARD_CLOCK_USART_PINS		RCC_AHB1ENR_IOPDEN
@@ -84,14 +89,24 @@ static struct {
 # define BOARD_LED_ON
 # define BOARD_LED_OFF
 
-# define BOARD_USART			USART1
-# define BOARD_PORT_USART		PORTB
+# define BOARD_USART			    USART1
+# define BOARD_PORT_USART		    GPIOB
 # define BOARD_USART_CLOCK_REGISTER	RCC_APB2ENR
 # define BOARD_USART_CLOCK_BIT		RCC_APB2ENR_USART1EN
-# define BOARD_PIN_TX			GPIO6
-# define BOARD_PIN_RX			GPIO7
+# define BOARD_PIN_TX			    GPIO6
+# define BOARD_PIN_RX			    GPIO7
 # define BOARD_CLOCK_USART_PINS		RCC_AHB1ENR_IOPBEN
-# define BOARD_FUNC_USART		GPIO_AF7
+# define BOARD_FUNC_USART		    GPIO_AF7
+
+# define BOARD_I2C                  I2C2
+# define BOARD_I2C_FREQ             400000 // Hz
+# define BOARD_PORT_I2C		        GPIOB
+# define BOARD_I2C_CLOCK_REGISTER	RCC_APB2ENR
+# define BOARD_I2C_CLOCK_BIT		RCC_APB2ENR_USART1EN
+# define BOARD_PIN_SCL			    GPIO6
+# define BOARD_PIN_SDA			    GPIO7
+# define BOARD_CLOCK_I2C_PINS		RCC_AHB1ENR_IOPBEN
+# define BOARD_FUNC_I2C		        GPIO_AF4
 #endif
 
 #ifdef BOARD_DISCOVERY
@@ -164,8 +179,20 @@ static const clock_scale_t clock_setup =
 	.apb1_frequency = 42000000,
 	.apb2_frequency = 84000000,
 #endif
-
 };
+
+#ifdef BOARD_FC
+PCA_I2C_DEVICE pca_i2c_dev =
+{
+    .i2c = BOARD_I2C;
+    .port = BOARD_PORT_I2C;
+    .mode_af = BOARD_FUNC_I2C;
+    .gpio_scl = BOARD_PIN_SCL;
+    .gpio_sda = BOARD_PIN_SDA;
+    .fast_mode = true;
+    .auto_increment = true; // For PCA9533 only
+}
+#endif
 
 static void
 board_init(void)
@@ -186,6 +213,11 @@ board_init(void)
 	BOARD_LED_ON (
 		BOARD_PORT_LEDS,
 		BOARD_PIN_LED_BOOTLOADER | BOARD_PIN_LED_ACTIVITY);
+#endif
+
+#ifdef BOARD_FC
+	/* initialise LEDs */
+    pca953x_init(pca_i2c_dev);
 #endif
 
 #ifdef INTERFACE_USART
@@ -361,3 +393,4 @@ main(void)
 		timeout = 0;
 	}
 }
+
