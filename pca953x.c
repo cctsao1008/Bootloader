@@ -24,9 +24,9 @@ pca9533_t pca9533_tbl = {
     .pwm0 = 0x00,
     .psc1 = 0x00,
     .pwm0 = 0x00,
-    .ls0.led0 = PCA9533_LED_ON,
+    .ls0.led0 = PCA9533_LED_OFF,
     .ls0.led1 = PCA9533_LED_OFF,
-    .ls0.led2 = PCA9533_LED_ON,
+    .ls0.led2 = PCA9533_LED_OFF,
     .ls0.led3 = PCA9533_LED_OFF,
 };
 
@@ -47,10 +47,18 @@ pca_tbl* pca953x_init(i2c_device_t* dev)
 {
     i2c_setup(dev);
 
-    i2c_write(dev->i2c.id, PCA9533_ADDR, PCA9533_REG_START, (u8 *)&pca9533_tbl, sizeof(pca9533_tbl)/sizeof(u8));
-    i2c_write(dev->i2c.id, PCA9536_ADDR, PCA9536_REG_START, (u8 *)&pca9536_tbl, sizeof(pca9536_tbl)/sizeof(u8));
+    i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_START, (u8 *)&pca9533_tbl, sizeof(pca9533_tbl)/sizeof(u8));
+    i2c_write(i2c_dev->i2c.id, PCA9536_ADDR, PCA9536_REG_START, (u8 *)&pca9536_tbl, sizeof(pca9536_tbl)/sizeof(u8));
 
-    i2c_dev = dev;
+    // test code
+    pca9536_set_peroid(PCA9533_REG_PSC0, 1000000);
+    pca9536_set_peroid(PCA9533_REG_PSC1, 500000);
+    pca9536_set_pwm(PCA9533_REG_PWM0, 50);
+    pca9536_set_pwm(PCA9533_REG_PWM1, 50);
+    pca9536_set_led(PCA9533_LED0, PCA9533_LED_PWM0);
+    pca9536_set_led(PCA9533_LED1, PCA9533_LED_PWM1);
+    pca9536_set_led(PCA9533_LED2, PCA9533_LED_OFF);
+    pca9536_set_led(PCA9533_LED3, PCA9533_LED_ON);
 
     return &pca_95xx_tbl;
 }
@@ -228,6 +236,8 @@ void i2c_setup(i2c_device_t* dev)
     /* If everything is configured . enable the peripheral. */
     i2c_peripheral_enable(dev->i2c.id);
 
+    i2c_dev = dev;
+
 }
 
 u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
@@ -305,9 +315,6 @@ cleanup:
 u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 {
     u8 rc = 0;
-    #if 0
-	u32 reg32;
-	u16 temperature;
 
 	/* Send START condition. */
 	i2c_send_start(i2c);
@@ -318,19 +325,19 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 
 	/* Say to what address we want to talk to. */
 	/* Yes, WRITE is correct - for selecting register in STTS75. */
-	i2c_send_7bit_address(i2c, sensor, I2C_WRITE);
+	i2c_send_7bit_address(i2c, addr, I2C_WRITE);
 
 	/* Waiting for address is transferred. */
 	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR));
 
 	/* Cleaning ADDR condition sequence. */
-	reg32 = I2C_SR2(i2c);
+	I2C_SR2(i2c);
 
-	i2c_send_data(i2c, 0x0); /* temperature register */
+	i2c_send_data(i2c, 0x0);  /* Sent register address that we want to talk to */
 	while (!(I2C_SR1(i2c) & (I2C_SR1_BTF | I2C_SR1_TxE)));
 
 	/*
-	 * Now we transferred that we want to ACCESS the temperature register.
+	 * Now we transferred that we want to ACCESS the register.
 	 * Now we send another START condition (repeated START) and then
 	 * transfer the destination but with flag READ.
 	 */
@@ -343,7 +350,7 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 		& (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
 
 	/* Say to what address we want to talk to. */
-	i2c_send_7bit_address(i2c, sensor, I2C_READ); 
+	i2c_send_7bit_address(i2c, addr, I2C_READ); 
 
 	/* 2-byte receive is a special case. See datasheet POS bit. */
 	I2C_CR1(i2c) |= (I2C_CR1_POS | I2C_CR1_ACK);
@@ -352,14 +359,14 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR));
 
 	/* Cleaning ADDR condition sequence. */
-	reg32 = I2C_SR2(i2c);
+	I2C_SR2(i2c);
 
 	/* Cleaning I2C_SR1_ACK. */
 	I2C_CR1(i2c) &= ~I2C_CR1_ACK;
 
 	/* Now the slave should begin to send us the first byte. Await BTF. */
 	while (!(I2C_SR1(i2c) & I2C_SR1_BTF));
-	temperature = (u16)(I2C_DR(i2c) << 8); /* MSB */
+	*data = (u16)(I2C_DR(i2c) << 8); /* MSB */
 
 	/*
 	 * Yes they mean it: we have to generate the STOP condition before
@@ -367,13 +374,11 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 	 */
 	I2C_CR1(i2c) |= I2C_CR1_STOP;
 
-	temperature |= I2C_DR(i2c); /* LSB */
+	*(data+1) |= I2C_DR(i2c); /* LSB */
 
 	/* Original state. */
 	I2C_CR1(i2c) &= ~I2C_CR1_POS;
 
-	return temperature;
-    #endif
 cleanup:
     return rc;
 }

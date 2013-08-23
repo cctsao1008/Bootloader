@@ -39,8 +39,11 @@ static struct {
 
 #ifdef BOARD_FMU
 # define BOARD_TYPE                 5
+
+// Board OSC
 # define OSC_FREQ                   24
 
+// Board LED
 # define BOARD_PIN_LED_ACTIVITY     GPIO15
 # define BOARD_PIN_LED_BOOTLOADER   GPIO14
 # define BOARD_PORT_LEDS            GPIOB
@@ -48,6 +51,7 @@ static struct {
 # define BOARD_LED_ON               gpio_clear
 # define BOARD_LED_OFF              gpio_set
 
+// Board UART
 # define BOARD_USART                USART1
 # define BOARD_PORT_USART           GPIOB
 # define BOARD_USART_CLOCK_REGISTER RCC_APB2ENR
@@ -60,8 +64,11 @@ static struct {
 
 #ifdef BOARD_FLOW
 # define BOARD_TYPE                 6
+
+// Board OSC
 # define OSC_FREQ                   24
 
+// Board LED
 # define BOARD_PIN_LED_ACTIVITY     GPIO3
 # define BOARD_PIN_LED_BOOTLOADER   GPIO2
 # define BOARD_PORT_LEDS            GPIOE
@@ -69,6 +76,7 @@ static struct {
 # define BOARD_LED_ON               gpio_clear
 # define BOARD_LED_OFF              gpio_set
 
+// Board UART
 # define BOARD_USART_CLOCK_REGISTER RCC_APB1ENR
 # define BOARD_USART_CLOCK_BIT      RCC_APB1ENR_USART2EN
 # define BOARD_USART                USART2
@@ -77,9 +85,14 @@ static struct {
 # define BOARD_PIN_RX               GPIO6
 # define BOARD_CLOCK_USART_PINS     RCC_AHB1ENR_IOPDEN
 # define BOARD_FUNC_USART           GPIO_AF7
+
+// Board USB
+# define BOARD_PORT_USB             GPIOA
+# define BOARD_PIN_VBUS             GPIO9
 #endif
 
 #ifdef BOARD_FC
+// Board LED
 # define BOARD_TYPE                 5
 # define OSC_FREQ                   8
 
@@ -88,6 +101,7 @@ static struct {
 # define BOARD_LED_ON               led_on
 # define BOARD_LED_OFF              led_off
 
+// Board UART
 # define BOARD_USART                USART1
 # define BOARD_PORT_USART           GPIOB
 # define BOARD_USART_CLOCK_REGISTER RCC_APB2ENR
@@ -97,6 +111,7 @@ static struct {
 # define BOARD_CLOCK_USART_PINS     RCC_AHB1ENR_IOPBEN
 # define BOARD_FUNC_USART           GPIO_AF7
 
+// Board I2C
 # define BOARD_I2C                  I2C2
 # define BOARD_PORT_I2C             GPIOB
 # define BOARD_I2C_CLOCK_REGISTER   RCC_APB1ENR
@@ -105,13 +120,19 @@ static struct {
 # define BOARD_PIN_SDA              GPIO11
 # define BOARD_CLOCK_I2C_PINS       RCC_AHB1ENR_IOPBEN
 # define BOARD_FUNC_I2C             GPIO_AF4
+
+// Board USB
+# define BOARD_PORT_USB             GPIOA
+# define BOARD_PIN_VBUS             GPIO9
 #endif
 
 #ifdef BOARD_DISCOVERY
 # define BOARD_TYPE                 99
 
+// Board OSC
 # define OSC_FREQ                   8
 
+// Board LED
 # define BOARD_PIN_LED_ACTIVITY     GPIO12
 # define BOARD_PIN_LED_BOOTLOADER   GPIO13
 # define BOARD_PORT_LEDS            GPIOD
@@ -119,6 +140,7 @@ static struct {
 # define BOARD_LED_ON               gpio_set
 # define BOARD_LED_OFF              gpio_clear
 
+// Board UART
 # define BOARD_USART                USART2
 # define BOARD_PORT_USART           GPIOA
 # define BOARD_USART_CLOCK_REGISTER RCC_APB1ENR
@@ -209,7 +231,13 @@ i2c_device_t pca_i2c_dev =
 static void
 board_init(void)
 {
-#ifdef BOARD_FMU
+    /* Enable the FPU before we hit any FP instructions */
+    SCB_CPACR |= ((3UL << 10*2) | (3UL << 11*2)); /* set CP10 Full Access and set CP11 Full Access */
+
+    /* configure the clock for bootloader activity */
+    rcc_clock_setup_hse_3v3(&clock_setup);
+    
+    #ifdef BOARD_FMU
     /* initialise LEDs */
     rcc_peripheral_enable_clock(&RCC_AHB1ENR, BOARD_CLOCK_LEDS);
 
@@ -226,10 +254,10 @@ board_init(void)
         BOARD_PIN_LED_BOOTLOADER | BOARD_PIN_LED_ACTIVITY);
 
         BOARD_LED_ON (BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER | BOARD_PIN_LED_ACTIVITY);
-#endif
+    #endif
 
-#ifdef BOARD_FC
-    /* (re)start the timer system */
+    #ifdef BOARD_FC
+    /* start the timer system for I2C timeout used */
 	systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB);
 	systick_set_reload(board_info.systick_mhz * 1000);	/* 1ms tick, magic number */
 	systick_interrupt_enable();
@@ -237,9 +265,16 @@ board_init(void)
 
     /* initialise LEDs */
     pca953x_init(&pca_i2c_dev);
-#endif
+    #endif
 
-#ifdef INTERFACE_USART
+    /*  Common interface initialise */
+    #ifdef INTERFACE_USB
+    /* enable GPIO9 with a pulldown to sniff VBUS */
+    rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPAEN);
+    gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO9);
+    #endif
+
+    #ifdef INTERFACE_USART
     /* configure usart pins */
     rcc_peripheral_enable_clock(&BOARD_USART_CLOCK_REGISTER, BOARD_USART_CLOCK_BIT);
     gpio_mode_setup(BOARD_PORT_USART, GPIO_MODE_AF, GPIO_PUPD_NONE, BOARD_PIN_TX | BOARD_PIN_RX);
@@ -247,7 +282,7 @@ board_init(void)
 
     /* configure USART clock */
     rcc_peripheral_enable_clock(&BOARD_USART_CLOCK_REGISTER, BOARD_USART_CLOCK_BIT);
-#endif
+    #endif
 
 }
 
@@ -352,29 +387,21 @@ main(void)
 {
     unsigned timeout = 0;
 
-    /* Enable the FPU before we hit any FP instructions */
-    SCB_CPACR |= ((3UL << 10*2) | (3UL << 11*2)); /* set CP10 Full Access and set CP11 Full Access */
-
-#ifdef INTERFACE_USB
-    /* enable GPIO9 with a pulldown to sniff VBUS */
-    rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPAEN);
-    gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO9);
-#endif
-
     /* do board-specific initialisation */
     board_init();
 
-#ifdef INTERFACE_USB
+    #ifdef INTERFACE_USB
     /* check for USB connection - if present, we will wait in the bootloader for a while */
-    if (gpio_get(GPIOA, GPIO9) != 0)
+    if (gpio_get(BOARD_PORT_USB, BOARD_PIN_VBUS) != 0)
     {
         timeout = BOOTLOADER_DELAY;
     }
-#endif
-#ifdef INTERFACE_USART
+    #endif
+
+    #ifdef INTERFACE_USART
     /* XXX sniff for a USART connection to decide whether to wait in the bootloader */
     timeout = 0;
-#endif
+    #endif
 
     /* XXX we could look at the backup SRAM to check for stay-in-bootloader instructions */
 
@@ -387,16 +414,6 @@ main(void)
         timeout = 0;
     }
 
-    /* configure the clock for bootloader activity */
-    rcc_clock_setup_hse_3v3(&clock_setup);
-#if 0
-    // MCO1/02
-    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8);
-    gpio_set_output_options(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, GPIO8);
-    gpio_set_af(GPIOA, GPIO_AF0, GPIO8);
-    gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9);
-    gpio_set_af(GPIOC, GPIO_AF0, GPIO9);
-#endif
     /* start the interface */
     cinit(BOARD_INTERFACE_CONFIG);
 
