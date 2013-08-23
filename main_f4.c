@@ -38,56 +38,55 @@ static struct {
 #define BOARD_FLASH_SECTORS (sizeof(flash_sectors) / sizeof(flash_sectors[0]))
 
 #ifdef BOARD_FMU
-# define BOARD_TYPE			5
-
-# define OSC_FREQ			24
+# define BOARD_TYPE			        5
+# define OSC_FREQ			        24
 
 # define BOARD_PIN_LED_ACTIVITY		GPIO15
 # define BOARD_PIN_LED_BOOTLOADER	GPIO14
-# define BOARD_PORT_LEDS		GPIOB
-# define BOARD_CLOCK_LEDS		RCC_AHB1ENR_IOPBEN
-# define BOARD_LED_ON			gpio_clear
-# define BOARD_LED_OFF			gpio_set
+# define BOARD_PORT_LEDS		    GPIOB
+# define BOARD_CLOCK_LEDS		    RCC_AHB1ENR_IOPBEN
+# define BOARD_LED_ON			    gpio_clear
+# define BOARD_LED_OFF			    gpio_set
 
-# define BOARD_USART			USART1
-# define BOARD_PORT_USART		GPIOB
+# define BOARD_USART			    USART1
+# define BOARD_PORT_USART		    GPIOB
 # define BOARD_USART_CLOCK_REGISTER	RCC_APB2ENR
 # define BOARD_USART_CLOCK_BIT		RCC_APB2ENR_USART1EN
-# define BOARD_PIN_TX			GPIO6
-# define BOARD_PIN_RX			GPIO7
+# define BOARD_PIN_TX			    GPIO6
+# define BOARD_PIN_RX			    GPIO7
 # define BOARD_CLOCK_USART_PINS		RCC_AHB1ENR_IOPBEN
-# define BOARD_FUNC_USART		GPIO_AF7
+# define BOARD_FUNC_USART		    GPIO_AF7
 #endif
 
 #ifdef BOARD_FLOW
-# define BOARD_TYPE			6
-
-# define OSC_FREQ			24
+# define BOARD_TYPE			        6
+# define OSC_FREQ			        24
 
 # define BOARD_PIN_LED_ACTIVITY		GPIO3
 # define BOARD_PIN_LED_BOOTLOADER	GPIO2
-# define BOARD_PORT_LEDS		GPIOE
-# define BOARD_CLOCK_LEDS		RCC_AHB1ENR_IOPEEN
-# define BOARD_LED_ON			gpio_clear
-# define BOARD_LED_OFF			gpio_set
+# define BOARD_PORT_LEDS		    GPIOE
+# define BOARD_CLOCK_LEDS		    RCC_AHB1ENR_IOPEEN
+# define BOARD_LED_ON			    gpio_clear
+# define BOARD_LED_OFF			    gpio_set
 
 # define BOARD_USART_CLOCK_REGISTER	RCC_APB1ENR
 # define BOARD_USART_CLOCK_BIT		RCC_APB1ENR_USART2EN
-# define BOARD_USART			USART2
-# define BOARD_PORT_USART		GPIOD
-# define BOARD_PIN_TX			GPIO5
-# define BOARD_PIN_RX			GPIO6
+# define BOARD_USART			    USART2
+# define BOARD_PORT_USART		    GPIOD
+# define BOARD_PIN_TX			    GPIO5
+# define BOARD_PIN_RX		    	GPIO6
 # define BOARD_CLOCK_USART_PINS		RCC_AHB1ENR_IOPDEN
-# define BOARD_FUNC_USART		GPIO_AF7
+# define BOARD_FUNC_USART		    GPIO_AF7
 #endif
 
 #ifdef BOARD_FC
-# define BOARD_TYPE			5
+# define BOARD_TYPE			        5
+# define OSC_FREQ			        8
 
-# define OSC_FREQ			8
-
-# define BOARD_LED_ON
-# define BOARD_LED_OFF
+# define BOARD_PIN_LED_ACTIVITY		LED0
+# define BOARD_PIN_LED_BOOTLOADER	LED1
+# define BOARD_LED_ON               led_on
+# define BOARD_LED_OFF              led_off
 
 # define BOARD_USART			    USART1
 # define BOARD_PORT_USART		    GPIOB
@@ -99,37 +98,36 @@ static struct {
 # define BOARD_FUNC_USART		    GPIO_AF7
 
 # define BOARD_I2C                  I2C2
-# define BOARD_I2C_FREQ             400000 // Hz
 # define BOARD_PORT_I2C		        GPIOB
-# define BOARD_I2C_CLOCK_REGISTER	RCC_APB2ENR
-# define BOARD_I2C_CLOCK_BIT		RCC_APB2ENR_USART1EN
-# define BOARD_PIN_SCL			    GPIO6
-# define BOARD_PIN_SDA			    GPIO7
+# define BOARD_I2C_CLOCK_REGISTER	RCC_APB1ENR
+# define BOARD_I2C_CLOCK_BIT		RCC_APB1ENR_I2C2EN
+# define BOARD_PIN_SCL			    GPIO10
+# define BOARD_PIN_SDA			    GPIO11
 # define BOARD_CLOCK_I2C_PINS		RCC_AHB1ENR_IOPBEN
 # define BOARD_FUNC_I2C		        GPIO_AF4
 #endif
 
 #ifdef BOARD_DISCOVERY
-# define BOARD_TYPE			99
+# define BOARD_TYPE			        99
 
-# define OSC_FREQ			8
+# define OSC_FREQ			        8
 
 # define BOARD_PIN_LED_ACTIVITY		GPIO12
 # define BOARD_PIN_LED_BOOTLOADER	GPIO13
-# define BOARD_PORT_LEDS		GPIOD
-# define BOARD_CLOCK_LEDS		RCC_AHB1ENR_IOPDEN
-# define BOARD_LED_ON			gpio_set
-# define BOARD_LED_OFF			gpio_clear
+# define BOARD_PORT_LEDS		    GPIOD
+# define BOARD_CLOCK_LEDS		    RCC_AHB1ENR_IOPDEN
+# define BOARD_LED_ON			    gpio_set
+# define BOARD_LED_OFF			    gpio_clear
 
-# define BOARD_USART			USART2
-# define BOARD_PORT_USART		GPIOA
+# define BOARD_USART			    USART2
+# define BOARD_PORT_USART		    GPIOA
 # define BOARD_USART_CLOCK_REGISTER	RCC_APB1ENR
 # define BOARD_USART_CLOCK_BIT		RCC_APB1ENR_USART2EN
-# define BOARD_PIN_TX			GPIO2
-# define BOARD_PIN_RX			GPIO3
-# define BOARD_USART_PIN_CLOCK_REGISTER	RCC_APB2ENR
-# define BOARD_USART_PIN_CLOCK_BIT	RCC_AHB1ENR_IOPAEN
-# define BOARD_FUNC_USART		GPIO_AF7
+# define BOARD_PIN_TX			    GPIO2
+# define BOARD_PIN_RX			    GPIO3
+# define BOARD_USART_CLOCK_REGISTER	RCC_APB2ENR
+# define BOARD_USART_CLOCK_BIT   	RCC_AHB1ENR_IOPAEN
+# define BOARD_FUNC_USART		    GPIO_AF7
 #endif
 
 #ifdef INTERFACE_USART
@@ -182,13 +180,29 @@ static const clock_scale_t clock_setup =
 #ifdef BOARD_FC
 i2c_device_t pca_i2c_dev =
 {
-    .i2c = BOARD_I2C,
-    .port = BOARD_PORT_I2C,
-    .mode_af = BOARD_FUNC_I2C,
-    .gpio_scl = BOARD_PIN_SCL,
-    .gpio_sda = BOARD_PIN_SDA,
-    .fast_mode = true,
-    .auto_increment = true, // For PCA9533 only
+    .i2c =
+    {
+        .clk =
+        {
+            .reg = &RCC_APB1ENR,
+            .en = RCC_APB1ENR_I2C2EN,
+        },
+        .id = BOARD_I2C,
+        .fast_mode = true,
+        .auto_increment = true, // For PCA9533 only
+    },
+    
+    .gpio =
+    {
+        .clk =
+        {
+            .reg = &RCC_AHB1ENR,
+            .en = RCC_AHB1ENR_IOPBEN,
+        },
+        .port = BOARD_PORT_I2C,
+        .pair = BOARD_PIN_SCL|BOARD_PIN_SDA,
+        .mode_af = BOARD_FUNC_I2C,
+    }
 };
 #endif
 
@@ -198,29 +212,30 @@ board_init(void)
 #ifdef BOARD_FMU
 	/* initialise LEDs */
 	rcc_peripheral_enable_clock(&RCC_AHB1ENR, BOARD_CLOCK_LEDS);
+
 	gpio_mode_setup(
 		BOARD_PORT_LEDS, 
 		GPIO_MODE_OUTPUT, 
 		GPIO_PUPD_NONE,
 		BOARD_PIN_LED_BOOTLOADER | BOARD_PIN_LED_ACTIVITY);
+
 	gpio_set_output_options(
 		BOARD_PORT_LEDS,
 		GPIO_OTYPE_PP,
 		GPIO_OSPEED_2MHZ,
 		BOARD_PIN_LED_BOOTLOADER | BOARD_PIN_LED_ACTIVITY);
-	BOARD_LED_ON (
-		BOARD_PORT_LEDS,
-		BOARD_PIN_LED_BOOTLOADER | BOARD_PIN_LED_ACTIVITY);
+
+        BOARD_LED_ON (BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER | BOARD_PIN_LED_ACTIVITY);
 #endif
 
 #ifdef BOARD_FC
 	/* initialise LEDs */
-    pca953x_init(pca_i2c_dev);
+    pca953x_init(&pca_i2c_dev);
 #endif
 
 #ifdef INTERFACE_USART
 	/* configure usart pins */
-	rcc_peripheral_enable_clock(&BOARD_USART_PIN_CLOCK_REGISTER, BOARD_USART_PIN_CLOCK_BIT);
+	rcc_peripheral_enable_clock(&BOARD_USART_CLOCK_REGISTER, BOARD_USART_CLOCK_BIT);
 	gpio_mode_setup(BOARD_PORT_USART, GPIO_MODE_AF, GPIO_PUPD_NONE, BOARD_PIN_TX | BOARD_PIN_RX);
 	gpio_set_af(BOARD_PORT_USART, BOARD_FUNC_USART, BOARD_PIN_TX | BOARD_PIN_RX);
 

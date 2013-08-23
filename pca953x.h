@@ -31,36 +31,52 @@
 
 typedef struct
 {
-    u32 i2c;
-    u32 port;
-    u16 mode_af;
-    u16 gpio_scl;
-    u16 gpio_sda;
-    u8  fast_mode;
-    u8  auto_increment; // For PCA9533 only
+    struct
+    {
+        struct
+        {
+            volatile u32* reg;
+            u32 en;
+        }clk;
+    
+        u32 id;
+        u8  fast_mode;
+        u8  auto_increment; // For PCA9533 only
+    }i2c;
+
+    struct
+    {
+        struct
+        {
+            volatile u32* reg;
+            u32 en;
+        }clk;
+
+        u32 port;
+        u16 pair;
+        u8 mode_af;
+    }gpio;
 }i2c_device_t;
 
-typedef union
+typedef struct
 {
     u8 input ;
     u8 psc0 ;
     u8 pwm0 ;
     u8 psc1 ;
     u8 pwm1 ;
-    u8 ls0 ;
-
-    struct
+    
+    union
     {
-        u8 led0 : 2 ;
-        u8 led1 : 2 ;
-        u8 led2 : 2 ;
-        u8 led3 : 2 ;
-        u8      : 8 ;
-        u8      : 8 ;
-        u8      : 8 ;
-        u8      : 8 ;
-        u8      : 8 ;
-    };
+    	u8 ls0 ;
+    	struct
+    	{
+    		u8 led0 : 2 ;
+        	u8 led1 : 2 ;
+        	u8 led2 : 2 ;
+        	u8 led3 : 2 ;
+    	};
+    }ls0 ;
 }pca9533_t;
 
 //4-bit I2C-bus and SMBus I/O port
@@ -69,41 +85,65 @@ typedef union
 #define REG_POLARITY   0x02
 #define REG_CONFIG     0x03
 
-typedef union
+typedef struct
 {
-    u8 input ;
-    u8 output ;
-    u8 polarity ;
-    u8 config ;
-
-    struct
+    union
     {
-        u8 ix0 : 1 ;
-        u8 ix1 : 1 ;
-        u8 ix2 : 1 ;
-        u8 ix3 : 1 ;
-        u8     : 4 ;
+    	u8 input ;
+    	struct
+    	{
+    		u8 ix0 : 1 ;
+    		u8 ix1 : 1 ;
+    		u8 ix2 : 1 ;
+    		u8 ix3 : 1 ;
+    	};
+    }input;
 
-        u8 ox0 : 1 ;
-        u8 ox1 : 1 ;
-        u8 ox2 : 1 ;
-        u8 ox3 : 1 ;
-        u8     : 4 ;
+    union
+    {
+    	u8 output ;
+    	struct
+    	{
+    		u8 ox0 : 1 ;
+    		u8 ox1 : 1 ;
+    		u8 ox2 : 1 ;
+    		u8 ox3 : 1 ;
+    	};
+    }output;
 
-        u8 nx0 : 1 ;
-        u8 nx1 : 1 ;
-        u8 nx2 : 1 ;
-        u8 nx3 : 1 ;
-        u8     : 4 ;
+    union
+    {
+    	u8 polarity ;
+    	struct
+    	{
+    		u8 nx0 : 1 ;
+    		u8 nx1 : 1 ;
+    		u8 nx2 : 1 ;
+    		u8 nx3 : 1 ;
+    	};
+    }polarity;
 
-        u8 cx0 : 1 ;
-        u8 cx1 : 1 ;
-        u8 cx2 : 1 ;
-        u8 cx3 : 1 ;
-        u8     : 4 ;
-    };
+    union
+    {
+    	u8 config ;
+    	struct
+    	{
+    		u8 cx0 : 1 ;
+    		u8 cx1 : 1 ;
+    		u8 cx2 : 1 ;
+    		u8 cx3 : 1 ;
+    	};
+    }config;
 }pca9536_t;
 
-u32 pca953x_init(i2c_device_t i2c_dev);
+typedef struct
+{
+    pca9533_t* pca9533;
+    pca9536_t* pca9536;
+
+}pca_tbl;
+
+pca_tbl* pca953x_init(i2c_device_t* dev);
+u8 pca953x_update(u8 dev_id, pca_tbl* tbl);
 
 #endif  /* _PCA953X_H */
