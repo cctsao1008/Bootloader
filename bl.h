@@ -23,11 +23,12 @@ extern void jump_to_app(void);
 extern void bootloader(unsigned timeout);
 
 /* generic timers */
-#define NTIMERS		4
+#define NTIMERS		5
 #define TIMER_BL_WAIT	0
-#define TIMER_CIN	1
-#define TIMER_LED	2
-#define TIMER_DELAY	3
+#define TIMER_CIN	    1
+#define TIMER_LED	    2
+#define TIMER_DELAY   	3
+#define TIMER_I2C	    4
 extern volatile unsigned timer[NTIMERS];	/* each timer decrements every millisecond if > 0 */
 
 /* generic receive buffer for async reads */

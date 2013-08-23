@@ -11,23 +11,25 @@
 //4-bit I2C-bus LED dimmer
 #define PCA9533_ADDR  0x62
 
-#define REG_INPUT      0x00
-#define REG_PSC0       0x01
-#define REG_PWM0       0x02
-#define REG_PSC1       0x03
-#define REG_PWM1       0x04
-#define REG_LS0        0x05
+#define PCA9533_REG_START      0x00
+#define PCA9533_REG_INPUT      0x00
+#define PCA9533_REG_PSC0       0x01
+#define PCA9533_REG_PWM0       0x02
+#define PCA9533_REG_PSC1       0x03
+#define PCA9533_REG_PWM1       0x04
+#define PCA9533_REG_LS0        0x05
 
-#define LED_OFF        0x00
-#define LED_ON         0x01
-#define LED_PWM0       0x02
-#define LED_PWM1       0x03
+#define PCA9533_LED_OFF        0x00
+#define PCA9533_LED_ON         0x01
+#define PCA9533_LED_PWM0       0x02
+#define PCA9533_LED_PWM1       0x03
 
-#define AI_FLAG        0x10
-#define LED0           0x00
-#define LED1           0x02
-#define LED2           0x04
-#define LED3           0x06
+#define PCA9533_AI_FLAG        0x10
+
+#define PCA9533_LED0           0x00
+#define PCA9533_LED1           0x02
+#define PCA9533_LED2           0x04
+#define PCA9533_LED3           0x06
 
 typedef struct
 {
@@ -81,9 +83,17 @@ typedef struct
 
 //4-bit I2C-bus and SMBus I/O port
 #define PCA9536_ADDR  0x41
-#define REG_OUTPUT     0x01
-#define REG_POLARITY   0x02
-#define REG_CONFIG     0x03
+
+#define PCA9536_REG_START      0x00
+#define PCA9536_REG_INPUT      0x00
+#define PCA9536_REG_OUTPUT     0x01
+#define PCA9536_REG_POLARITY   0x02
+#define PCA9536_REG_CONFIG     0x03
+
+#define PCA9536_IO0 0x00
+#define PCA9536_IO1 0x00
+#define PCA9536_IO2 0x00
+#define PCA9536_IO3 0x00
 
 typedef struct
 {
@@ -144,6 +154,9 @@ typedef struct
 }pca_tbl;
 
 pca_tbl* pca953x_init(i2c_device_t* dev);
-u8 pca953x_update(u8 dev_id, pca_tbl* tbl);
+u8 pca9536_update(u8 pca_id);
+u8 pca9536_set_peroid(u8 psc, u32 usec);
+u8 pca9536_set_pwm(u8 pwm, u32 duty);
+u8 pca9536_set_led(u8 led, u32 mode);
 
 #endif  /* _PCA953X_H */

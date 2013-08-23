@@ -9,8 +9,10 @@
 #include <libopencm3/stm32/i2c.h>
 #include "pca953x.h"
 
-void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count);
-void i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count);
+#define UNIT_US 6578
+  
+u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count);
+u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count);
 void i2c_setup(i2c_device_t* i2c_dev);
 void i2c_error(void);
 
@@ -22,49 +24,158 @@ pca9533_t pca9533_tbl = {
     .pwm0 = 0x00,
     .psc1 = 0x00,
     .pwm0 = 0x00,
-    .ls0.led0 = LED_ON,
-    .ls0.led1 = LED_OFF,
-    .ls0.led2 = LED_ON,
-    .ls0.led3 = LED_OFF,
-} ;
+    .ls0.led0 = PCA9533_LED_ON,
+    .ls0.led1 = PCA9533_LED_OFF,
+    .ls0.led2 = PCA9533_LED_ON,
+    .ls0.led3 = PCA9533_LED_OFF,
+};
 
 pca9536_t pca9536_tbl = {
     .input = {0x00},
     .output = {0x00},
     .polarity = {0x00},
     .config.cx3 = 0x0,
-} ;
+};
 
 pca_tbl pca_95xx_tbl = {&pca9533_tbl, &pca9536_tbl};
 i2c_device_t* i2c_dev = 0;
+
+#define TIMER_I2C	    4
+extern volatile unsigned timer[];
 
 pca_tbl* pca953x_init(i2c_device_t* dev)
 {
     i2c_setup(dev);
 
-    i2c_write(dev->i2c.id, PCA9533_ADDR, 0x0, (u8 *)&pca9533_tbl, sizeof(pca9533_tbl)/sizeof(u8));
-    i2c_write(dev->i2c.id, PCA9536_ADDR, 0x0, (u8 *)&pca9536_tbl, sizeof(pca9536_tbl)/sizeof(u8));
+    i2c_write(dev->i2c.id, PCA9533_ADDR, PCA9533_REG_START, (u8 *)&pca9533_tbl, sizeof(pca9533_tbl)/sizeof(u8));
+    i2c_write(dev->i2c.id, PCA9536_ADDR, PCA9536_REG_START, (u8 *)&pca9536_tbl, sizeof(pca9536_tbl)/sizeof(u8));
 
     i2c_dev = dev;
 
     return &pca_95xx_tbl;
 }
 
-u8 pca953x_update(u8 dev_id, pca_tbl* tbl)
+u8 pca953x_update(u8 pca_id)
 {
     u8 rc = false;
 
     if(i2c_dev == 0)
         goto cleanup;
 
-    if(dev_id == PCA9533_ADDR)
+    if(pca_id == PCA9533_ADDR)
     {
-        i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, 0x0, (u8 *)(tbl->pca9533), sizeof(pca9533_tbl)/sizeof(u8));
+        if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_START, (u8 *)&pca9533_tbl, sizeof(pca9533_tbl)/sizeof(u8)))
+            goto cleanup;
     }
-    else if(dev_id == PCA9536_ADDR)
+    else if(pca_id == PCA9536_ADDR)
     {
-        i2c_write(i2c_dev->i2c.id, PCA9536_ADDR, 0x0, (u8 *)(tbl->pca9536), sizeof(pca9536_tbl)/sizeof(u8));
+        if(!i2c_write(i2c_dev->i2c.id, PCA9536_ADDR, PCA9536_REG_START, (u8 *)&pca9536_tbl, sizeof(pca9536_tbl)/sizeof(u8)))
+            goto cleanup;
     }
+
+    rc = true;
+
+cleanup:
+    return rc;
+}
+
+u8 pca9536_set_peroid(u8 psc, u32 usec)
+{
+    u8 rc = 0, data = 0;
+
+    if(usec < 6578)
+        data = 0;
+
+    if(usec > 1677390)
+        data = 255;
+
+    data = (u8)(usec/UNIT_US);
+
+    if(psc == PCA9533_REG_PSC0)
+    {
+        if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_PSC0, &data, 0x01))
+            goto cleanup;
+
+        // update table
+        pca9533_tbl.psc0 = data;
+    }
+    
+    if(psc == PCA9533_REG_PSC1)
+    {
+        if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_PSC1, &data, 0x01))
+            goto cleanup;
+
+        // update table
+        pca9533_tbl.psc1 = data;
+    }
+
+    rc = true;
+
+cleanup:
+    return rc;
+}
+
+u8 pca9536_set_pwm(u8 pwm, u32 duty)
+{
+    u8 rc = false, data = 0;
+
+    if(duty < 0)
+        data = 0;
+
+    if(duty > 100)
+        data = 255;
+
+    data = (u8)(((float)duty/100)*256);
+
+    if(pwm == PCA9533_REG_PWM0)
+    {
+        if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_PWM0, &data, 0x01))
+        goto cleanup;
+
+        // update table
+        pca9533_tbl.pwm0 = data;
+    }
+    
+    if(pwm == PCA9533_REG_PWM1)
+    {
+        if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_PWM1, &data, 0x01))
+        goto cleanup;
+
+        // update table
+        pca9533_tbl.pwm1 = data;
+    }
+
+    rc = true;
+
+cleanup:
+    return rc;
+}
+
+u8 pca9536_set_led(u8 led, u32 mode)
+{
+    u8 rc = false, data = 0, reg = 0;
+
+    switch(led)
+    {
+        case PCA9533_LED0 :
+            pca9533_tbl.ls0.led0 = mode;
+            break;
+        
+        case PCA9533_LED1 :
+            pca9533_tbl.ls0.led1 = mode;
+            break;
+
+        case PCA9533_LED2 :
+            pca9533_tbl.ls0.led2 = mode;
+            break;
+
+        case PCA9533_LED3 :
+            pca9533_tbl.ls0.led3 = mode;
+            break;
+    }
+
+    if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_LS0, (u8*)&(pca9533_tbl.ls0), 0x01))
+        goto cleanup;
 
     rc = true;
 
@@ -119,13 +230,20 @@ void i2c_setup(i2c_device_t* dev)
 
 }
 
-void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
+u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 {
-	u32 i;
+    u8 rc = false;
+	u32 i = 0;
 
     for(i = 0; i < count; i++)
     {
-        while((I2C_SR2(i2c) & I2C_SR2_BUSY));
+        timer[TIMER_I2C] = 10; // 10ms
+
+        while((I2C_SR2(i2c) & I2C_SR2_BUSY))
+        {
+            if(timer[TIMER_I2C] == 0)
+                goto cleanup;
+    	}
 
         // I2C Start
         /* Send START condition. */
@@ -133,7 +251,11 @@ void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 
         // I2C EV5
     	/* Waiting for START is send and therefore switched to master mode. */
-    	while (!((I2C_SR1(i2c) & I2C_SR1_SB) & (I2C_SR2(i2c) & (I2C_SR2_MSL|I2C_SR2_BUSY))));
+    	while (!((I2C_SR1(i2c) & I2C_SR1_SB) & (I2C_SR2(i2c) & (I2C_SR2_MSL|I2C_SR2_BUSY))))
+    	{
+            if(timer[TIMER_I2C] == 0)
+                goto cleanup;
+    	}
 
         // I2C Address
     	/* Say to what address we want to talk to. */
@@ -141,7 +263,12 @@ void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 
         // I2C EV6
     	/* Waiting for address is transferred. */
-    	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR));
+    	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR))
+    	{
+            if(timer[TIMER_I2C] == 0)
+                goto cleanup;
+    	}
+
     	/* Cleaning ADDR condition sequence. */
 	    I2C_SR2(i2c);
 
@@ -149,21 +276,35 @@ void i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
         i2c_send_data(i2c, reg + i); /* Sent register address that we want to talk to */
 
         // I2C EV8
-    	while (!(I2C_SR1(i2c) & I2C_SR1_TxE));
+    	while (!(I2C_SR1(i2c) & I2C_SR1_TxE))
+    	{
+            if(timer[TIMER_I2C] == 0)
+                goto cleanup;
+    	}
 
         // I2C EV8_2
         /* After the last byte we have to wait for I2C_SR1_BTF too. */
         i2c_send_data(i2c, (u8)(*(data + i)));
         while (!(I2C_SR1(i2c) & (I2C_SR1_TxE|I2C_SR1_BTF)));
+        {
+            if(timer[TIMER_I2C] == 0)
+                goto cleanup;
+    	}
 
         /* Send STOP condition. */
         i2c_send_stop(i2c);
 
     }
+
+    rc = true;
+
+cleanup:
+    return rc;
 }
 
-void i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
+u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 {
+    u8 rc = 0;
     #if 0
 	u32 reg32;
 	u16 temperature;
@@ -233,5 +374,7 @@ void i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 
 	return temperature;
     #endif
+cleanup:
+    return rc;
 }
 
