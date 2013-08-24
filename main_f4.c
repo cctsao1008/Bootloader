@@ -102,7 +102,7 @@ static struct {
 
 #ifdef BOARD_FC
 pca_tbl_t* pca_953x_tbl;
-u8 led_bl_on = 0;
+u8 led_bl_on = 0; // IO3 of PCA9536, Red LED
 
 // Board LED
 # define BOARD_TYPE                 5
@@ -384,7 +384,7 @@ led_toggle(unsigned led)
         break;
     case LED_BOOTLOADER:
         #ifdef BOARD_FC
-        led_bl_on ^= (1 << 0); // toggle bit0
+        led_bl_on ^= (1 << 0); // toggle bit0, IO3 of PCA9536, Red LED
         pca9536_config_io(PCA9536_IO3, led_bl_on);
         #else
         gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);

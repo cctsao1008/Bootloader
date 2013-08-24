@@ -56,8 +56,8 @@ pca_tbl_t* pca953x_init(i2c_device_t* dev)
 
     
     // test pca9533 leds 
-    pca9533_set_peroid(PCA9533_REG_PSC0, 1000000);
-    pca9533_set_peroid(PCA9533_REG_PSC1, 500000);
+    pca9533_set_peroid(PCA9533_REG_PSC0, 1000);
+    pca9533_set_peroid(PCA9533_REG_PSC1, 500);
     pca9533_set_pwm(PCA9533_REG_PWM0, 50);
     pca9533_set_pwm(PCA9533_REG_PWM1, 50);
     pca9533_set_led(PCA9533_LED0, PCA9533_LED_PWM0);
@@ -95,17 +95,20 @@ cleanup:
     return rc;
 }
 
-u8 pca9533_set_peroid(u8 psc, u32 usec)
+#define MIN_MSEC 7 // 7 msec for minimal
+#define MAX_MSEC 1684 // 1684 msec for maximal
+
+u8 pca9533_set_peroid(u8 psc, u32 msec)
 {
     u8 rc = 0, data = 0;
 
-    if(usec < 6578)
+    if(msec < MIN_MSEC) // min_msev
         data = 0;
 
-    if(usec > 1677390)
+    if(msec > MAX_MSEC)
         data = 255;
 
-    data = (u8)(usec/UNIT_US);
+    data = (u8)((float)msec * 0.152f) - 1;
 
     if(psc == PCA9533_REG_PSC0)
     {
