@@ -158,5 +158,5 @@ u8 pca953x_update(u8 pca_id);
 u8 pca9533_set_peroid(u8 psc, u32 usec);
 u8 pca9533_set_pwm(u8 pwm, u32 duty);
 u8 pca9533_set_led(u8 led, u32 mode);
-
+u8 pca9536_config_io(u8 io, u8 set);
 #endif  /* _PCA953X_H */

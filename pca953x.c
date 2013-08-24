@@ -35,7 +35,7 @@ pca9536_t pca9536_tbl = {
     .config.cx3 = 0x0,
 };
 
-pca_tbl_t pca_95xx_tbl = {&pca9533_tbl, &pca9536_tbl};
+pca_tbl_t pca_953x_tbl;
 i2c_device_t* i2c_dev = 0;
 
 #define TIMER_I2C	    4
@@ -61,7 +61,10 @@ pca_tbl_t* pca953x_init(i2c_device_t* dev)
     pca9533_set_led(PCA9533_LED2, PCA9533_LED_OFF);
     pca9533_set_led(PCA9533_LED3, PCA9533_LED_ON);
 
-    return &pca_95xx_tbl;
+    pca_953x_tbl.pca9533 = &pca9533_tbl;
+    pca_953x_tbl.pca9536 = &pca9536_tbl;
+
+    return &pca_953x_tbl;
 }
 
 u8 pca953x_update(u8 pca_id)

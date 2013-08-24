@@ -101,7 +101,9 @@ static struct {
 #endif
 
 #ifdef BOARD_FC
-pca_tbl_t* pca_95xx_tbl;
+pca_tbl_t* pca_953x_tbl;
+u8 led_bl_on = 0;
+
 // Board LED
 # define BOARD_TYPE                 5
 # define OSC_FREQ                   8
@@ -277,7 +279,7 @@ board_init(void)
 	systick_counter_enable();
 
     /* initialise LEDs */
-    pca_95xx_tbl = pca953x_init(&pca_i2c_dev);
+    pca953x_init(&pca_i2c_dev);
     #endif
 
     /*  Common interface initialise */
@@ -382,7 +384,8 @@ led_toggle(unsigned led)
         break;
     case LED_BOOTLOADER:
         #ifdef BOARD_FC
-
+        led_bl_on ^= (1 << 0); // toggle bit0
+        pca9536_config_io(PCA9536_IO3, led_bl_on);
         #else
         gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
         #endif
