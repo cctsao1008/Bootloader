@@ -103,14 +103,15 @@ static struct {
 #ifdef BOARD_FC
 pca_tbl_t* pca_953x_tbl;
 u8 led_bl_on = 0; // IO3 of PCA9536, Red LED
+u8 led_act_on = 0;
 
 // Board OSC
 # define BOARD_TYPE                 5
 # define OSC_FREQ                   8
 
 // Board LED
-# define BOARD_PIN_LED_ACTIVITY     LED0
-# define BOARD_PIN_LED_BOOTLOADER   LED1
+# define BOARD_PIN_LED_ACTIVITY     PCA9533_LED2
+# define BOARD_PIN_LED_BOOTLOADER   PCA9533_LED3
 # define BOARD_LED_ON               led_on
 # define BOARD_LED_OFF              led_off
 
@@ -304,14 +305,14 @@ board_init(void)
     pca953x_init(&pca_i2c_dev);
 
     /* system bootup beep */
-    beep_on(100, 300);
+    beep_on(40, 300); // (100,300)
     #endif
 
     /*  Common interface initialise */
     #ifdef INTERFACE_USB
     /* enable GPIO9 with a pulldown to sniff VBUS */
     rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPAEN);
-    gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO9);
+    gpio_mode_setup(BOARD_PORT_USB, GPIO_MODE_INPUT, GPIO_PUPD_NONE, BOARD_PIN_VBUS);
     #endif
 
     #ifdef INTERFACE_USART
@@ -360,14 +361,14 @@ led_on(unsigned led)
     switch (led) {
     case LED_ACTIVITY:
         #ifdef BOARD_FC
-
+        pca9533_set_led(BOARD_PIN_LED_ACTIVITY, PCA9533_LED_ON);
         #else
         BOARD_LED_ON (BOARD_PORT_LEDS, BOARD_PIN_LED_ACTIVITY);
         #endif
         break;
     case LED_BOOTLOADER:
         #ifdef BOARD_FC
-
+        pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, PCA9533_LED_ON);
         #else
         BOARD_LED_ON (BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
         #endif
@@ -381,14 +382,14 @@ led_off(unsigned led)
     switch (led) {
     case LED_ACTIVITY:
         #ifdef BOARD_FC
-
+        pca9533_set_led(BOARD_PIN_LED_ACTIVITY, PCA9533_LED_OFF);
         #else
         BOARD_LED_OFF (BOARD_PORT_LEDS, BOARD_PIN_LED_ACTIVITY);
         #endif
         break;
     case LED_BOOTLOADER:
         #ifdef BOARD_FC
-
+        pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, PCA9533_LED_OFF);
         #else
         BOARD_LED_OFF (BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
         #endif
@@ -399,18 +400,24 @@ led_off(unsigned led)
 void
 led_toggle(unsigned led)
 {
+    #ifdef BOARD_FC
+    led_bl_on ^= (1 << 0); // toggle bit0, IO3 of PCA9536, Red LED
+    led_act_on ^= (1 << 0);
+    #endif
+
     switch (led) {
     case LED_ACTIVITY:
         #ifdef BOARD_FC
-
+        pca9533_set_led(BOARD_PIN_LED_ACTIVITY, led_act_on);
         #else
         gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_ACTIVITY);
         #endif
         break;
     case LED_BOOTLOADER:
         #ifdef BOARD_FC
-        led_bl_on ^= (1 << 0); // toggle bit0, IO3 of PCA9536, Red LED
-        pca9536_config_io(PCA9536_IO3, led_bl_on);
+        //led_bl_on ^= (1 << 0); // toggle bit0, IO3 of PCA9536, Red LED
+        //pca9536_config_io(PCA9536_IO3, led_bl_on);
+        pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, led_bl_on);
         #else
         gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
         #endif
@@ -473,15 +480,15 @@ main(void)
 
         /* if we returned, there is no app; go to the bootloader and stay there */
         timeout = 0;
-
-        #ifdef BOARD_FC
-        /* and beep for three times !! if we are using TMR-FC board */
-        for(i = 0; i < 3 ; i++)
-        {
-           beep_on(40, 80); // beep on for 100ms
-        }
-        #endif
     }
+
+    #ifdef BOARD_FC
+    /* and beep for three times !! if we are using TMR-FC board */
+    for(i = 0; i < 3 ; i++)
+    {
+       beep_on(20, 80); // beep on for 100ms (40,80)
+    }
+    #endif
 
     /* start the interface */
     cinit(BOARD_INTERFACE_CONFIG);

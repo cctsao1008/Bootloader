@@ -26,39 +26,10 @@
 
 #define PCA9533_AI_FLAG        0x10
 
-#define PCA9533_LED0           0x00
+#define PCA9533_LED0           0x01
 #define PCA9533_LED1           0x02
 #define PCA9533_LED2           0x04
-#define PCA9533_LED3           0x06
-
-typedef struct _i2c_device_t
-{
-    struct
-    {
-        struct
-        {
-            volatile u32* reg;
-            u32 en;
-        }clk;
-    
-        u32 id;
-        u8  fast_mode;
-        u8  auto_increment; // For PCA9533 only
-    }i2c;
-
-    struct
-    {
-        struct
-        {
-            volatile u32* reg;
-            u32 en;
-        }clk;
-
-        u32 port;
-        u16 pair;
-        u8 mode_af;
-    }gpio;
-}i2c_device_t;
+#define PCA9533_LED3           0x08
 
 typedef struct _pca9533_t
 {
@@ -153,7 +124,39 @@ typedef struct
 
 }pca_tbl_t;
 
-pca_tbl_t* pca953x_init(i2c_device_t* dev);
+typedef struct _i2c_device_t
+{
+    struct
+    {
+        u8 locked;
+        struct
+        {
+            volatile u32* reg;
+            u32 en;
+        }clk;
+    
+        u32 id;
+        u8  fast_mode;
+        u8  auto_increment; // For PCA9533 only
+    }i2c;
+
+    struct
+    {
+        struct
+        {
+            volatile u32* reg;
+            u32 en;
+        }clk;
+
+        u32 port;
+        u16 pair;
+        u8 mode_af;
+    }gpio;
+
+    pca_tbl_t pca_953x_tbl;
+}i2c_device_t;
+
+u8 pca953x_init(i2c_device_t* dev);
 u8 pca953x_update(u8 pca_id);
 u8 pca9533_set_peroid(u8 psc, u32 msec);
 u8 pca9533_set_pwm(u8 pwm, u32 duty);

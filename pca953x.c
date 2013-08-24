@@ -40,8 +40,10 @@ pca_tbl_t pca_953x_tbl;
 i2c_device_t* i2c_dev = 0;
 
 #define TIMER_I2C	    4
-pca_tbl_t* pca953x_init(i2c_device_t* dev)
+u8 pca953x_init(i2c_device_t* dev)
 {
+    u8 rc = false;
+
     #if 0
     // test timer
     timer[TIMER_I2C] = 5000; // 5 secs
@@ -50,10 +52,13 @@ pca_tbl_t* pca953x_init(i2c_device_t* dev)
 
     i2c_setup(dev);
 
-    i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_START, (u8 *)&pca9533_tbl, sizeof(pca9533_tbl)/sizeof(u8));
-    i2c_write(i2c_dev->i2c.id, PCA9536_ADDR, PCA9536_REG_START, (u8 *)&pca9536_tbl, sizeof(pca9536_tbl)/sizeof(u8));
+    if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_START, (u8 *)&(pca9533_tbl), sizeof(pca9533_tbl)/sizeof(u8)))
+        goto cleanup;
 
-    
+    if(!i2c_write(i2c_dev->i2c.id, PCA9536_ADDR, PCA9536_REG_START, (u8 *)&pca9536_tbl, sizeof(pca9536_tbl)/sizeof(u8)))
+        goto cleanup;
+
+    #if 0
     // test pca9533 leds 
     pca9533_set_peroid(PCA9533_REG_PSC0, 1000);
     pca9533_set_peroid(PCA9533_REG_PSC1, 500);
@@ -63,11 +68,15 @@ pca_tbl_t* pca953x_init(i2c_device_t* dev)
     pca9533_set_led(PCA9533_LED1, PCA9533_LED_PWM1);
     pca9533_set_led(PCA9533_LED2, PCA9533_LED_PWM0);
     pca9533_set_led(PCA9533_LED3, PCA9533_LED_PWM1);
+    #endif
 
-    pca_953x_tbl.pca9533 = &pca9533_tbl;
-    pca_953x_tbl.pca9536 = &pca9536_tbl;
+    i2c_dev->pca_953x_tbl.pca9533 = &pca9533_tbl;
+    i2c_dev->pca_953x_tbl.pca9536 = &pca9536_tbl;
 
-    return &pca_953x_tbl;
+    rc = true;
+
+cleanup:
+    return rc;
 }
 
 u8 pca953x_update(u8 pca_id)
@@ -239,8 +248,7 @@ void i2c_error(void)
 }
 
 void i2c_setup(i2c_device_t* dev)
-{   
-
+{
     /* Enable clocks for GPIO. */
     rcc_peripheral_enable_clock(dev->i2c.clk.reg, dev->i2c.clk.en);
 
@@ -287,13 +295,18 @@ u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
     u8 rc = false;
 	u32 i = 0;
 
+	if(i2c_dev->i2c.locked == true)
+	    goto cleanup;
+	else
+	    i2c_dev->i2c.locked = true;
+
     for(i = 0; i < count; i++)
     {
-        timer[TIMER_I2C] = 10; // 10ms
+        timer[TIMER_I2C] = 2; // 2ms for timeout
 
         while((I2C_SR2(i2c) & I2C_SR2_BUSY))
         {
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     	}
 
@@ -305,7 +318,7 @@ u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
     	/* Waiting for START is send and therefore switched to master mode. */
     	while (!((I2C_SR1(i2c) & I2C_SR1_SB) & (I2C_SR2(i2c) & (I2C_SR2_MSL|I2C_SR2_BUSY))))
     	{
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     	}
 
@@ -317,7 +330,7 @@ u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
     	/* Waiting for address is transferred. */
     	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR))
     	{
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     	}
 
@@ -330,7 +343,7 @@ u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
         // I2C EV8
     	while (!(I2C_SR1(i2c) & I2C_SR1_TxE))
     	{
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     	}
 
@@ -339,7 +352,7 @@ u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
         i2c_send_data(i2c, (u8)(*(data + i)));
         while (!(I2C_SR1(i2c) & (I2C_SR1_TxE|I2C_SR1_BTF)));
         {
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     	}
 
@@ -348,6 +361,7 @@ u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 
     }
 
+    i2c_dev->i2c.locked = false;
     rc = true;
 
 cleanup:
@@ -358,7 +372,7 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 {
     u8 rc = 0;
 
-    timer[TIMER_I2C] = 10; // 10ms
+    timer[TIMER_I2C] = 2; // 2ms for timeout
 
 	/* Send START condition. */
 	i2c_send_start(i2c);
@@ -366,7 +380,7 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 	/* Waiting for START is send and switched to master mode. */
 	while (!((I2C_SR1(i2c) & I2C_SR1_SB) & (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))))
 	{
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     }
 
@@ -377,7 +391,7 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 	/* Waiting for address is transferred. */
 	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR))
 	{
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     }
 
@@ -387,7 +401,7 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 	i2c_send_data(i2c, 0x0);  /* Sent register address that we want to talk to */
 	while (!(I2C_SR1(i2c) & (I2C_SR1_BTF | I2C_SR1_TxE)))
 	{
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     }
 
@@ -403,7 +417,7 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 	/* Waiting for START is send and switched to master mode. */
 	while (!((I2C_SR1(i2c) & I2C_SR1_SB) & (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))))
 	{
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     }
 
@@ -416,7 +430,7 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 	/* Waiting for address is transferred. */
 	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR))
 	{
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     }
 
@@ -429,7 +443,7 @@ u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count)
 	/* Now the slave should begin to send us the first byte. Await BTF. */
 	while (!(I2C_SR1(i2c) & I2C_SR1_BTF))
 	{
-            if(timer[TIMER_I2C] == 0)
+            if(timer[TIMER_I2C] < 0)
                 goto cleanup;
     }
 
