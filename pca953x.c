@@ -43,15 +43,19 @@ extern volatile unsigned timer[];
 
 pca_tbl_t* pca953x_init(i2c_device_t* dev)
 {
+    #if 0
+    // test timer
     timer[TIMER_I2C] = 5000; // 5 secs
     while(timer[TIMER_I2C] > 0);
+    #endif
 
     i2c_setup(dev);
 
     i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_START, (u8 *)&pca9533_tbl, sizeof(pca9533_tbl)/sizeof(u8));
     i2c_write(i2c_dev->i2c.id, PCA9536_ADDR, PCA9536_REG_START, (u8 *)&pca9536_tbl, sizeof(pca9536_tbl)/sizeof(u8));
 
-    // test code
+    
+    // test pca9533 leds 
     pca9533_set_peroid(PCA9533_REG_PSC0, 1000000);
     pca9533_set_peroid(PCA9533_REG_PSC1, 500000);
     pca9533_set_pwm(PCA9533_REG_PWM0, 50);
