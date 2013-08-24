@@ -82,7 +82,7 @@ static const uint32_t	bl_proto_rev = 3;	// value returned by PROTO_DEVICE_BL_REV
 
 static unsigned head, tail;
 static uint8_t rx_buf[256];
- u8 bl_mode = false;
+u8 bl_mode = false;
 
 void sys_tick_handler(void);
 
