@@ -17,6 +17,11 @@
 
 #include "bl.h"
 
+/* we should know this, but we don't */
+#ifndef SCB_CPACR
+# define SCB_CPACR (*((volatile uint32_t *) (((0xE000E000UL) + 0x0D00UL) + 0x088)))
+#endif
+
 /* flash parameters that we should not really know */
 static struct {
     uint32_t    erase_code;
@@ -60,6 +65,10 @@ static struct {
 # define BOARD_PIN_RX               GPIO7
 # define BOARD_CLOCK_USART_PINS     RCC_AHB1ENR_IOPBEN
 # define BOARD_FUNC_USART           GPIO_AF7
+
+// Board USB
+# define BOARD_PORT_USB             GPIOA
+# define BOARD_PIN_VBUS             GPIO9
 #endif
 
 #ifdef BOARD_FLOW
@@ -92,6 +101,7 @@ static struct {
 #endif
 
 #ifdef BOARD_FC
+pca_tbl_t* pca_95xx_tbl;
 // Board LED
 # define BOARD_TYPE                 5
 # define OSC_FREQ                   8
@@ -147,9 +157,12 @@ static struct {
 # define BOARD_USART_CLOCK_BIT      RCC_APB1ENR_USART2EN
 # define BOARD_PIN_TX               GPIO2
 # define BOARD_PIN_RX               GPIO3
-# define BOARD_USART_CLOCK_REGISTER RCC_APB2ENR
-# define BOARD_USART_CLOCK_BIT      RCC_AHB1ENR_IOPAEN
+# define BOARD_CLOCK_USART_PINS     RCC_AHB1ENR_IOPAEN
 # define BOARD_FUNC_USART           GPIO_AF7
+
+// Board USB
+# define BOARD_PORT_USB             GPIOA
+# define BOARD_PIN_VBUS             GPIO9
 #endif
 
 #ifdef INTERFACE_USART
@@ -264,7 +277,7 @@ board_init(void)
 	systick_counter_enable();
 
     /* initialise LEDs */
-    pca953x_init(&pca_i2c_dev);
+    pca_95xx_tbl = pca953x_init(&pca_i2c_dev);
     #endif
 
     /*  Common interface initialise */
@@ -376,11 +389,6 @@ led_toggle(unsigned led)
         break;
     }
 }
-
-/* we should know this, but we don't */
-#ifndef SCB_CPACR
-# define SCB_CPACR (*((volatile uint32_t *) (((0xE000E000UL) + 0x0D00UL) + 0x088)))
-#endif
 
 int
 main(void)

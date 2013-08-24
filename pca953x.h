@@ -91,9 +91,9 @@ typedef struct
 #define PCA9536_REG_CONFIG     0x03
 
 #define PCA9536_IO0 0x00
-#define PCA9536_IO1 0x00
-#define PCA9536_IO2 0x00
-#define PCA9536_IO3 0x00
+#define PCA9536_IO1 0x01
+#define PCA9536_IO2 0x02
+#define PCA9536_IO3 0x03
 
 typedef struct
 {
@@ -151,12 +151,12 @@ typedef struct
     pca9533_t* pca9533;
     pca9536_t* pca9536;
 
-}pca_tbl;
+}pca_tbl_t;
 
-pca_tbl* pca953x_init(i2c_device_t* dev);
-u8 pca9536_update(u8 pca_id);
-u8 pca9536_set_peroid(u8 psc, u32 usec);
-u8 pca9536_set_pwm(u8 pwm, u32 duty);
-u8 pca9536_set_led(u8 led, u32 mode);
+pca_tbl_t* pca953x_init(i2c_device_t* dev);
+u8 pca953x_update(u8 pca_id);
+u8 pca9533_set_peroid(u8 psc, u32 usec);
+u8 pca9533_set_pwm(u8 pwm, u32 duty);
+u8 pca9533_set_led(u8 led, u32 mode);
 
 #endif  /* _PCA953X_H */
