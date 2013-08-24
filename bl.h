@@ -23,12 +23,13 @@ extern void jump_to_app(void);
 extern void bootloader(unsigned timeout);
 
 /* generic timers */
-#define NTIMERS		5
+#define NTIMERS		    5
 #define TIMER_BL_WAIT	0
 #define TIMER_CIN	    1
 #define TIMER_LED	    2
 #define TIMER_DELAY   	3
 #define TIMER_I2C	    4
+
 extern volatile unsigned timer[NTIMERS];	/* each timer decrements every millisecond if > 0 */
 
 /* generic receive buffer for async reads */
@@ -46,6 +47,10 @@ extern int buf_get(void);
 extern void led_on(unsigned led);
 extern void led_off(unsigned led);
 extern void led_toggle(unsigned led);
+
+#ifdef BOARD_FC
+extern void beep_on(unsigned on_msec, unsigned off_msec);
+#endif
 
 /* flash helpers from main_*.c */
 extern unsigned flash_func_sector_size(unsigned sector);

@@ -8,6 +8,7 @@
 #include <libopencm3/stm32/f4/gpio.h>
 #include <libopencm3/stm32/i2c.h>
 #include "pca953x.h"
+#include "bl.h"
 
 #define UNIT_US 6578
   
@@ -39,8 +40,6 @@ pca_tbl_t pca_953x_tbl;
 i2c_device_t* i2c_dev = 0;
 
 #define TIMER_I2C	    4
-extern volatile unsigned timer[];
-
 pca_tbl_t* pca953x_init(i2c_device_t* dev)
 {
     #if 0
@@ -58,12 +57,12 @@ pca_tbl_t* pca953x_init(i2c_device_t* dev)
     // test pca9533 leds 
     pca9533_set_peroid(PCA9533_REG_PSC0, 1000);
     pca9533_set_peroid(PCA9533_REG_PSC1, 500);
-    pca9533_set_pwm(PCA9533_REG_PWM0, 50);
-    pca9533_set_pwm(PCA9533_REG_PWM1, 50);
+    pca9533_set_pwm(PCA9533_REG_PWM0, 20);
+    pca9533_set_pwm(PCA9533_REG_PWM1, 20);
     pca9533_set_led(PCA9533_LED0, PCA9533_LED_PWM0);
     pca9533_set_led(PCA9533_LED1, PCA9533_LED_PWM1);
-    pca9533_set_led(PCA9533_LED2, PCA9533_LED_OFF);
-    pca9533_set_led(PCA9533_LED3, PCA9533_LED_ON);
+    pca9533_set_led(PCA9533_LED2, PCA9533_LED_PWM0);
+    pca9533_set_led(PCA9533_LED3, PCA9533_LED_PWM1);
 
     pca_953x_tbl.pca9533 = &pca9533_tbl;
     pca_953x_tbl.pca9536 = &pca9536_tbl;

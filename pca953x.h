@@ -31,7 +31,7 @@
 #define PCA9533_LED2           0x04
 #define PCA9533_LED3           0x06
 
-typedef struct
+typedef struct _i2c_device_t
 {
     struct
     {
@@ -60,7 +60,7 @@ typedef struct
     }gpio;
 }i2c_device_t;
 
-typedef struct
+typedef struct _pca9533_t
 {
     u8 input ;
     u8 psc0 ;
@@ -95,7 +95,7 @@ typedef struct
 #define PCA9536_IO2 0x02
 #define PCA9536_IO3 0x03
 
-typedef struct
+typedef struct _pca9536_t
 {
     union
     {

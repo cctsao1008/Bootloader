@@ -104,10 +104,11 @@ static struct {
 pca_tbl_t* pca_953x_tbl;
 u8 led_bl_on = 0; // IO3 of PCA9536, Red LED
 
-// Board LED
+// Board OSC
 # define BOARD_TYPE                 5
 # define OSC_FREQ                   8
 
+// Board LED
 # define BOARD_PIN_LED_ACTIVITY     LED0
 # define BOARD_PIN_LED_BOOTLOADER   LED1
 # define BOARD_LED_ON               led_on
@@ -132,6 +133,11 @@ u8 led_bl_on = 0; // IO3 of PCA9536, Red LED
 # define BOARD_PIN_SDA              GPIO11
 # define BOARD_CLOCK_I2C_PINS       RCC_AHB1ENR_IOPBEN
 # define BOARD_FUNC_I2C             GPIO_AF4
+
+// Board BEEP
+# define BOARD_PORT_BEEP            GPIOB
+# define BOARD_PIN_BEEP             GPIO12
+# define BOARD_CLOCK_BEEP           RCC_AHB1ENR_IOPBEN
 
 // Board USB
 # define BOARD_PORT_USB             GPIOA
@@ -251,6 +257,12 @@ board_init(void)
 
     /* configure the clock for bootloader activity */
     rcc_clock_setup_hse_3v3(&clock_setup);
+
+    /* start the timer system for I2C timeout used */
+	systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB);
+	systick_set_reload(board_info.systick_mhz * 1000);	/* 1ms tick, magic number */
+	systick_interrupt_enable();
+	systick_counter_enable();
     
     #ifdef BOARD_FMU
     /* initialise LEDs */
@@ -272,14 +284,27 @@ board_init(void)
     #endif
 
     #ifdef BOARD_FC
-    /* start the timer system for I2C timeout used */
-	systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB);
-	systick_set_reload(board_info.systick_mhz * 1000);	/* 1ms tick, magic number */
-	systick_interrupt_enable();
-	systick_counter_enable();
+
+    /* initialise system Beep */
+	rcc_peripheral_enable_clock(&RCC_AHB1ENR, BOARD_CLOCK_BEEP);
+
+    gpio_mode_setup(
+        BOARD_PORT_BEEP, 
+        GPIO_MODE_OUTPUT, 
+        GPIO_PUPD_NONE,
+        BOARD_PIN_BEEP);
+
+    gpio_set_output_options(
+        BOARD_PORT_BEEP,
+        GPIO_OTYPE_PP,
+        GPIO_OSPEED_2MHZ,
+        BOARD_PIN_BEEP);
 
     /* initialise LEDs */
     pca953x_init(&pca_i2c_dev);
+
+    /* system bootup beep */
+    beep_on(100, 300);
     #endif
 
     /*  Common interface initialise */
@@ -393,10 +418,35 @@ led_toggle(unsigned led)
     }
 }
 
+#ifdef BOARD_FC
+#define MAX_BEEP_TD 2000 // limit the maximum duration to 2000 ms
+void
+beep_on(unsigned on_msec, unsigned off_msec)
+{
+    if(on_msec < MAX_BEEP_TD) 
+        timer[TIMER_DELAY] = on_msec;
+    else
+        timer[TIMER_DELAY] = MAX_BEEP_TD;
+
+    gpio_set(BOARD_PORT_BEEP, BOARD_PIN_BEEP);
+
+    while(timer[TIMER_DELAY] > 0);
+
+    gpio_clear(BOARD_PORT_BEEP, BOARD_PIN_BEEP);
+
+    if(on_msec < MAX_BEEP_TD) // limit the maximum duration to 1000 ms
+        timer[TIMER_DELAY] = off_msec;
+    else
+        timer[TIMER_DELAY] = MAX_BEEP_TD;
+
+    while(timer[TIMER_DELAY] > 0);
+}
+#endif
+
 int
 main(void)
 {
-    unsigned timeout = 0;
+    unsigned timeout = 0, i = 0;
 
     /* do board-specific initialisation */
     board_init();
@@ -423,6 +473,14 @@ main(void)
 
         /* if we returned, there is no app; go to the bootloader and stay there */
         timeout = 0;
+
+        #ifdef BOARD_FC
+        /* and beep for three times !! if we are using TMR-FC board */
+        for(i = 0; i < 3 ; i++)
+        {
+           beep_on(40, 80); // beep on for 100ms
+        }
+        #endif
     }
 
     /* start the interface */
