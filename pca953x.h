@@ -61,10 +61,13 @@ typedef struct _pca9533_t
 #define PCA9536_REG_POLARITY   0x02
 #define PCA9536_REG_CONFIG     0x03
 
-#define PCA9536_IO0 0x00
-#define PCA9536_IO1 0x01
-#define PCA9536_IO2 0x02
-#define PCA9536_IO3 0x03
+#define PCA9536_IO0 0x01
+#define PCA9536_IO1 0x02
+#define PCA9536_IO2 0x04
+#define PCA9536_IO3 0x08
+
+#define PCA9536_IO_O 0x00
+#define PCA9536_IO_I 0x01
 
 typedef struct _pca9536_t
 {

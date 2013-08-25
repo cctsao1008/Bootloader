@@ -100,20 +100,44 @@ static struct {
 # define BOARD_PIN_VBUS             GPIO9
 #endif
 
-#ifdef BOARD_FC
-pca_tbl_t* pca_953x_tbl;
-u8 led_bl_on = 0; // IO3 of PCA9536, Red LED
-u8 led_act_on = 0;
+#ifdef BOARD_DISCOVERY
+# define BOARD_TYPE                 99
 
+// Board OSC
+# define OSC_FREQ                   8
+
+// Board LED
+# define BOARD_PIN_LED_ACTIVITY     GPIO12
+# define BOARD_PIN_LED_BOOTLOADER   GPIO13
+# define BOARD_PORT_LEDS            GPIOD
+# define BOARD_CLOCK_LEDS           RCC_AHB1ENR_IOPDEN
+# define BOARD_LED_ON               gpio_set
+# define BOARD_LED_OFF              gpio_clear
+
+// Board UART
+# define BOARD_USART                USART2
+# define BOARD_PORT_USART           GPIOA
+# define BOARD_USART_CLOCK_REGISTER RCC_APB1ENR
+# define BOARD_USART_CLOCK_BIT      RCC_APB1ENR_USART2EN
+# define BOARD_PIN_TX               GPIO2
+# define BOARD_PIN_RX               GPIO3
+# define BOARD_CLOCK_USART_PINS     RCC_AHB1ENR_IOPAEN
+# define BOARD_FUNC_USART           GPIO_AF7
+
+// Board USB
+# define BOARD_PORT_USB             GPIOA
+# define BOARD_PIN_VBUS             GPIO9
+#endif
+
+#ifdef BOARD_FC
 // Board OSC
 # define BOARD_TYPE                 5
 # define OSC_FREQ                   8
 
 // Board LED
-# define BOARD_PIN_LED_ACTIVITY     PCA9533_LED2
-# define BOARD_PIN_LED_BOOTLOADER   PCA9533_LED3
-# define BOARD_LED_ON               led_on
-# define BOARD_LED_OFF              led_off
+# define BOARD_PIN_LED_ACTIVITY     PCA9533_LED1 // Blue LED
+# define BOARD_PIN_LED_BOOTLOADER   PCA9533_LED3 // Red LED
+# define BOARD_PIN_LED_SYSPWRON     PCA9533_LED2 // Green LED
 
 // Board UART
 # define BOARD_USART                USART1
@@ -139,35 +163,6 @@ u8 led_act_on = 0;
 # define BOARD_PORT_BEEP            GPIOB
 # define BOARD_PIN_BEEP             GPIO12
 # define BOARD_CLOCK_BEEP           RCC_AHB1ENR_IOPBEN
-
-// Board USB
-# define BOARD_PORT_USB             GPIOA
-# define BOARD_PIN_VBUS             GPIO9
-#endif
-
-#ifdef BOARD_DISCOVERY
-# define BOARD_TYPE                 99
-
-// Board OSC
-# define OSC_FREQ                   8
-
-// Board LED
-# define BOARD_PIN_LED_ACTIVITY     GPIO12
-# define BOARD_PIN_LED_BOOTLOADER   GPIO13
-# define BOARD_PORT_LEDS            GPIOD
-# define BOARD_CLOCK_LEDS           RCC_AHB1ENR_IOPDEN
-# define BOARD_LED_ON               gpio_set
-# define BOARD_LED_OFF              gpio_clear
-
-// Board UART
-# define BOARD_USART                USART2
-# define BOARD_PORT_USART           GPIOA
-# define BOARD_USART_CLOCK_REGISTER RCC_APB1ENR
-# define BOARD_USART_CLOCK_BIT      RCC_APB1ENR_USART2EN
-# define BOARD_PIN_TX               GPIO2
-# define BOARD_PIN_RX               GPIO3
-# define BOARD_CLOCK_USART_PINS     RCC_AHB1ENR_IOPAEN
-# define BOARD_FUNC_USART           GPIO_AF7
 
 // Board USB
 # define BOARD_PORT_USB             GPIOA
@@ -304,8 +299,13 @@ board_init(void)
     /* initialise LEDs */
     pca953x_init(&pca_i2c_dev);
 
+    pca9533_set_led(PCA9533_LED1|PCA9533_LED2, PCA9533_LED_ON);
+
     /* system bootup beep */
     beep_on(40, 300); // (100,300)
+
+    pca9533_set_led(PCA9533_LED1, PCA9533_LED_OFF);
+
     #endif
 
     /*  Common interface initialise */
@@ -369,6 +369,7 @@ led_on(unsigned led)
     case LED_BOOTLOADER:
         #ifdef BOARD_FC
         pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, PCA9533_LED_ON);
+        pca9536_config_io(PCA9536_IO3, PCA9536_IO_O);
         #else
         BOARD_LED_ON (BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
         #endif
@@ -390,6 +391,7 @@ led_off(unsigned led)
     case LED_BOOTLOADER:
         #ifdef BOARD_FC
         pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, PCA9533_LED_OFF);
+        pca9536_config_io(PCA9536_IO3, PCA9536_IO_I);
         #else
         BOARD_LED_OFF (BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
         #endif
@@ -399,16 +401,16 @@ led_off(unsigned led)
 
 void
 led_toggle(unsigned led)
-{
+{ 
     #ifdef BOARD_FC
-    led_bl_on ^= (1 << 0); // toggle bit0, IO3 of PCA9536, Red LED
-    led_act_on ^= (1 << 0);
+    u8 led_status = 0;
     #endif
 
     switch (led) {
     case LED_ACTIVITY:
         #ifdef BOARD_FC
-        pca9533_set_led(BOARD_PIN_LED_ACTIVITY, led_act_on);
+        led_status = (pca_i2c_dev.pca_953x_tbl.pca9533->ls0.led1)^= (1 << 0);
+        pca9533_set_led(BOARD_PIN_LED_ACTIVITY, led_status);
         #else
         gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_ACTIVITY);
         #endif
@@ -417,7 +419,9 @@ led_toggle(unsigned led)
         #ifdef BOARD_FC
         //led_bl_on ^= (1 << 0); // toggle bit0, IO3 of PCA9536, Red LED
         //pca9536_config_io(PCA9536_IO3, led_bl_on);
-        pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, led_bl_on);
+        led_status = (pca_i2c_dev.pca_953x_tbl.pca9533->ls0.led3)^= (1 << 0);
+        pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, led_status);
+        pca9536_config_io(PCA9536_IO3, led_status);
         #else
         gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
         #endif
@@ -453,7 +457,11 @@ beep_on(unsigned on_msec, unsigned off_msec)
 int
 main(void)
 {
-    unsigned timeout = 0, i = 0;
+    unsigned timeout = 0;
+
+    #ifdef BOARD_FC
+    unsigned i = 0;
+    #endif
 
     /* do board-specific initialisation */
     board_init();

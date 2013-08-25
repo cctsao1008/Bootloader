@@ -10,7 +10,8 @@
 #include "pca953x.h"
 #include "bl.h"
 
-#define UNIT_US 6578
+#define MIN_MSEC 7 // 7 msec for minimal
+#define MAX_MSEC 1684 // 1684 msec for maximal
   
 u8 i2c_write(u32 i2c, u8 addr, u8 reg, u8* data, u8 count);
 u8 i2c_read(u32 i2c, u8 addr, u8 reg, u8* data, u8 count);
@@ -36,7 +37,6 @@ pca9536_t pca9536_tbl = {
     .config.cx3 = 0x0,
 };
 
-pca_tbl_t pca_953x_tbl;
 i2c_device_t* i2c_dev = 0;
 
 #define TIMER_I2C	    4
@@ -58,12 +58,18 @@ u8 pca953x_init(i2c_device_t* dev)
     if(!i2c_write(i2c_dev->i2c.id, PCA9536_ADDR, PCA9536_REG_START, (u8 *)&pca9536_tbl, sizeof(pca9536_tbl)/sizeof(u8)))
         goto cleanup;
 
-    #if 0
-    // test pca9533 leds 
-    pca9533_set_peroid(PCA9533_REG_PSC0, 1000);
+    // Group 0 : period = 1684 ms, duty = 2 %
+    pca9533_set_peroid(PCA9533_REG_PSC0, MAX_MSEC);
+    pca9533_set_pwm(PCA9533_REG_PWM0, 2);
+
+    // Group 1 : period = 500 ms, duty = 50 %
     pca9533_set_peroid(PCA9533_REG_PSC1, 500);
-    pca9533_set_pwm(PCA9533_REG_PWM0, 20);
-    pca9533_set_pwm(PCA9533_REG_PWM1, 20);
+    pca9533_set_pwm(PCA9533_REG_PWM1, 50);
+
+    pca9533_set_led(PCA9533_LED0, PCA9533_LED_PWM0);
+
+    #if 0
+    // test pca9533 leds
     pca9533_set_led(PCA9533_LED0, PCA9533_LED_PWM0);
     pca9533_set_led(PCA9533_LED1, PCA9533_LED_PWM1);
     pca9533_set_led(PCA9533_LED2, PCA9533_LED_PWM0);
@@ -152,7 +158,7 @@ u8 pca9533_set_pwm(u8 pwm, u32 duty)
     if(duty > 100)
         data = 255;
 
-    data = (u8)(((float)duty/100)*256);
+    data = (u8)(((float)duty/100.0f)*256.0f);
 
     if(pwm == PCA9533_REG_PWM0)
     {
@@ -182,6 +188,7 @@ u8 pca9533_set_led(u8 led, u32 mode)
 {
     u8 rc = false;
 
+    #if 0
     switch(led)
     {
         case PCA9533_LED0 :
@@ -200,6 +207,16 @@ u8 pca9533_set_led(u8 led, u32 mode)
             pca9533_tbl.ls0.led3 = mode;
             break;
     }
+    #else
+    if((led & PCA9533_LED0) == PCA9533_LED0)
+        pca9533_tbl.ls0.led0 = mode;
+    if((led & PCA9533_LED1) == PCA9533_LED1)
+        pca9533_tbl.ls0.led1 = mode;
+    if((led & PCA9533_LED2) == PCA9533_LED2)
+        pca9533_tbl.ls0.led2 = mode;
+    if((led & PCA9533_LED3) == PCA9533_LED3)
+        pca9533_tbl.ls0.led3 = mode;
+    #endif
 
     if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_LS0, (u8*)&(pca9533_tbl.ls0), 0x01))
         goto cleanup;
@@ -214,6 +231,7 @@ u8 pca9536_config_io(u8 io, u8 set)
 {
     u8 rc = false;
 
+    #if 0
     switch(io)
     {
         case PCA9536_IO0 :
@@ -232,6 +250,16 @@ u8 pca9536_config_io(u8 io, u8 set)
             pca9536_tbl.config.cx3 = set;
             break;
     }
+    #else
+    if((io & PCA9536_IO0) == PCA9536_IO0)
+        pca9536_tbl.config.cx0 = set;
+    if((io & PCA9536_IO1) == PCA9536_IO1)
+        pca9536_tbl.config.cx1 = set;
+    if((io & PCA9536_IO2) == PCA9536_IO2)
+        pca9536_tbl.config.cx2 = set;
+    if((io & PCA9536_IO3) == PCA9536_IO3)
+        pca9536_tbl.config.cx3 = set;
+    #endif
 
     if(!i2c_write(i2c_dev->i2c.id, PCA9536_ADDR, PCA9536_REG_CONFIG, (u8*)&(pca9536_tbl.config), 0x01))
         goto cleanup;

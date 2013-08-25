@@ -25,6 +25,10 @@
 
 #include "bl.h"
 
+#ifdef BOARD_FC
+#include "pca953x.h"
+#endif
+
 // bootloader flash update protocol.
 //
 // Command format:
@@ -406,7 +410,11 @@ bootloader(unsigned timeout)
 
 			// clear the bootloader LED while erasing - it stops blinking at random
 			// and that's confusing
+			#ifdef BOARD_FC
+            pca9533_set_led(PCA9533_LED3, PCA9533_LED_PWM1);
+			#else
 			led_off(LED_BOOTLOADER);
+			#endif
 
 			// erase all sectors
 			flash_unlock();
