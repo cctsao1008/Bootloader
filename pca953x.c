@@ -62,8 +62,8 @@ u8 pca953x_init(i2c_device_t* dev)
     pca9533_set_peroid(PCA9533_REG_PSC0, MAX_MSEC);
     pca9533_set_pwm(PCA9533_REG_PWM0, 2);
 
-    // Group 1 : period = 500 ms, duty = 50 %
-    pca9533_set_peroid(PCA9533_REG_PSC1, 500);
+    // Group 1 : period = 100 ms, duty = 50 %
+    pca9533_set_peroid(PCA9533_REG_PSC1, 100);
     pca9533_set_pwm(PCA9533_REG_PWM1, 50);
 
     pca9533_set_led(PCA9533_LED0, PCA9533_LED_PWM0);

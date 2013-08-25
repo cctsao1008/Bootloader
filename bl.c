@@ -411,6 +411,7 @@ bootloader(unsigned timeout)
 			// clear the bootloader LED while erasing - it stops blinking at random
 			// and that's confusing
 			#ifdef BOARD_FC
+			pca9533_set_peroid(PCA9533_REG_PSC1, 1000); // 1Hz blink Red LED
             pca9533_set_led(PCA9533_LED3, PCA9533_LED_PWM1);
 			#else
 			led_off(LED_BOOTLOADER);

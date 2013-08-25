@@ -409,19 +409,25 @@ led_toggle(unsigned led)
     switch (led) {
     case LED_ACTIVITY:
         #ifdef BOARD_FC
-        led_status = (pca_i2c_dev.pca_953x_tbl.pca9533->ls0.led1)^= (1 << 0);
-        pca9533_set_led(BOARD_PIN_LED_ACTIVITY, led_status);
+        if((pca_i2c_dev.pca_953x_tbl.pca9533->ls0.led1) != PCA9533_LED_PWM1)
+            pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, PCA9533_LED_PWM1);
         #else
         gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_ACTIVITY);
         #endif
         break;
     case LED_BOOTLOADER:
         #ifdef BOARD_FC
-        //led_bl_on ^= (1 << 0); // toggle bit0, IO3 of PCA9536, Red LED
-        //pca9536_config_io(PCA9536_IO3, led_bl_on);
-        led_status = (pca_i2c_dev.pca_953x_tbl.pca9533->ls0.led3)^= (1 << 0);
-        pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, led_status);
+        if((pca_i2c_dev.pca_953x_tbl.pca9533->ls0.led3) != PCA9533_LED_PWM1)
+        {
+            pca9533_set_peroid(PCA9533_REG_PSC1, 100); // 20Hz blink
+            pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, PCA9533_LED_PWM1);
+        }
+
+        #if 0
+        led_status = (pca_i2c_dev.pca_953x_tbl.pca9536->config.cx3)^= (1 << 0);
         pca9536_config_io(PCA9536_IO3, led_status);
+        #endif
+
         #else
         gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_BOOTLOADER);
         #endif
