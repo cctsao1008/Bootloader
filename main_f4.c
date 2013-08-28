@@ -255,10 +255,10 @@ board_init(void)
     rcc_clock_setup_hse_3v3(&clock_setup);
 
     /* start the timer system for I2C timeout used */
-	systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB);
-	systick_set_reload(board_info.systick_mhz * 1000);	/* 1ms tick, magic number */
-	systick_interrupt_enable();
-	systick_counter_enable();
+    systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB);
+    systick_set_reload(board_info.systick_mhz * 1000);  /* 1ms tick, magic number */
+    systick_interrupt_enable();
+    systick_counter_enable();
     
     #ifdef BOARD_FMU
     /* initialise LEDs */
@@ -282,7 +282,7 @@ board_init(void)
     #ifdef BOARD_FC
 
     /* initialise system Beep */
-	rcc_peripheral_enable_clock(&RCC_AHB1ENR, BOARD_CLOCK_BEEP);
+    rcc_peripheral_enable_clock(&RCC_AHB1ENR, BOARD_CLOCK_BEEP);
 
     gpio_mode_setup(
         BOARD_PORT_BEEP, 
@@ -407,7 +407,6 @@ led_toggle(unsigned led)
         #ifdef BOARD_FC
         if((pca_i2c_dev.pca_953x_tbl.pca9533->ls0.led1) != PCA9533_LED_PWM1)
         {
-            pca9533_set_peroid(PCA9533_REG_PSC1, LED_BLINK_10HZ);
             pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, PCA9533_LED_PWM1);
         }
         #else
