@@ -302,7 +302,7 @@ board_init(void)
     pca9533_set_led(PCA9533_LED1|PCA9533_LED2, PCA9533_LED_ON);
 
     /* system bootup beep */
-    beep_on(40, 300); // (100,300)
+    beep_on(40, 300);
 
     pca9533_set_led(PCA9533_LED1, PCA9533_LED_OFF);
 
@@ -402,15 +402,14 @@ led_off(unsigned led)
 void
 led_toggle(unsigned led)
 { 
-    #ifdef BOARD_FC
-    u8 led_status = 0;
-    #endif
-
     switch (led) {
     case LED_ACTIVITY:
         #ifdef BOARD_FC
         if((pca_i2c_dev.pca_953x_tbl.pca9533->ls0.led1) != PCA9533_LED_PWM1)
+        {
+            pca9533_set_peroid(PCA9533_REG_PSC1, LED_BLINK_10HZ);
             pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, PCA9533_LED_PWM1);
+        }
         #else
         gpio_toggle(BOARD_PORT_LEDS, BOARD_PIN_LED_ACTIVITY);
         #endif
@@ -419,7 +418,6 @@ led_toggle(unsigned led)
         #ifdef BOARD_FC
         if((pca_i2c_dev.pca_953x_tbl.pca9533->ls0.led3) != PCA9533_LED_PWM1)
         {
-            pca9533_set_peroid(PCA9533_REG_PSC1, 100); // 20Hz blink
             pca9533_set_led(BOARD_PIN_LED_BOOTLOADER, PCA9533_LED_PWM1);
         }
 
@@ -477,12 +475,29 @@ main(void)
     if (gpio_get(BOARD_PORT_USB, BOARD_PIN_VBUS) != 0)
     {
         timeout = BOOTLOADER_DELAY;
+
+        #ifdef BOARD_FC
+        /* and beep for three times !! */
+        for(i = 0; i < 3 ; i++)
+        {
+            beep_on(20, 80);
+        }
+        #endif
     }
     #endif
 
     #ifdef INTERFACE_USART
     /* XXX sniff for a USART connection to decide whether to wait in the bootloader */
     timeout = 0;
+
+    #ifdef BOARD_FC
+    /* and beep for three times !! */
+    for(i = 0; i < 2 ; i++)
+    {
+        beep_on(20, 80);
+    }
+    #endif
+        
     #endif
 
     /* XXX we could look at the backup SRAM to check for stay-in-bootloader instructions */
@@ -495,14 +510,6 @@ main(void)
         /* if we returned, there is no app; go to the bootloader and stay there */
         timeout = 0;
     }
-
-    #ifdef BOARD_FC
-    /* and beep for three times !! if we are using TMR-FC board */
-    for(i = 0; i < 3 ; i++)
-    {
-       beep_on(20, 80); // beep on for 100ms (40,80)
-    }
-    #endif
 
     /* start the interface */
     cinit(BOARD_INTERFACE_CONFIG);
@@ -517,6 +524,14 @@ main(void)
 
         /* boot failed; stay in the bootloader forever next time */
         timeout = 0;
+
+        #ifdef BOARD_FC
+        /* No OS image !! */
+        for(i = 0; i < 12 ; i++)
+        {
+            beep_on(40, 80);
+        }
+        #endif
     }
 }
 

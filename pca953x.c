@@ -63,7 +63,7 @@ u8 pca953x_init(i2c_device_t* dev)
     pca9533_set_pwm(PCA9533_REG_PWM0, 2);
 
     // Group 1 : period = 100 ms, duty = 50 %
-    pca9533_set_peroid(PCA9533_REG_PSC1, 100);
+    pca9533_set_peroid(PCA9533_REG_PSC1, LED_BLINK_20HZ); // 200 = 10Hz, 100 =20Hz
     pca9533_set_pwm(PCA9533_REG_PWM1, 50);
 
     pca9533_set_led(PCA9533_LED0, PCA9533_LED_PWM0);
@@ -129,6 +129,8 @@ u8 pca9533_set_peroid(u8 psc, u32 msec)
         if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_PSC0, &data, 0x01))
             goto cleanup;
 
+        // save old psc0
+        rc = pca9533_tbl.psc0;
         // update table
         pca9533_tbl.psc0 = data;
     }
@@ -138,11 +140,11 @@ u8 pca9533_set_peroid(u8 psc, u32 msec)
         if(!i2c_write(i2c_dev->i2c.id, PCA9533_ADDR, PCA9533_REG_PSC1, &data, 0x01))
             goto cleanup;
 
+        // save old psc1
+        rc = pca9533_tbl.psc1;
         // update table
         pca9533_tbl.psc1 = data;
     }
-
-    rc = true;
 
 cleanup:
     return rc;

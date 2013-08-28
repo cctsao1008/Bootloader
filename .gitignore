@@ -1,7 +1,8 @@
 .DS_Store
 *.o
 *.elf
-px4discovery_bl.bin
+stm32discovery_bl.bin
 px4io_bl.bin
 px4flow_bl.bin
 px4fmu_bl.bin
+tmrfc_bl.bin

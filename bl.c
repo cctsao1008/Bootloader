@@ -411,8 +411,7 @@ bootloader(unsigned timeout)
 			// clear the bootloader LED while erasing - it stops blinking at random
 			// and that's confusing
 			#ifdef BOARD_FC
-			pca9533_set_peroid(PCA9533_REG_PSC1, 1000); // 1Hz blink Red LED
-            pca9533_set_led(PCA9533_LED3, PCA9533_LED_PWM1);
+			pca9533_set_peroid(PCA9533_REG_PSC1, LED_BLINK_1HZ);
 			#else
 			led_off(LED_BOOTLOADER);
 			#endif
@@ -427,6 +426,10 @@ bootloader(unsigned timeout)
 				if (flash_func_read_word(address) != 0xffffffff)
 					goto cmd_fail;
 			address = 0;
+
+            #ifdef BOARD_FC
+			pca9533_set_peroid(PCA9533_REG_PSC1, LED_BLINK_20HZ);
+			#endif
 			break;
 
 			// program bytes at current address
@@ -437,6 +440,7 @@ bootloader(unsigned timeout)
 			// readback failure:	INSYNC/FAILURE
 			//
 		case PROTO_PROG_MULTI:		// program bytes
+
 			// expect count
 			arg = cin_wait(1000);
 			if (arg < 0)
@@ -474,6 +478,7 @@ bootloader(unsigned timeout)
 					goto cmd_fail;
 				address += 4;
 			}
+
 			break;
 
 			// fetch CRC of the entire flash area

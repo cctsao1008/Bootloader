@@ -31,6 +31,10 @@
 #define PCA9533_LED2           0x04
 #define PCA9533_LED3           0x08
 
+#define LED_BLINK_1HZ          500
+#define LED_BLINK_10HZ         200
+#define LED_BLINK_20HZ         100
+
 typedef struct _pca9533_t
 {
     u8 input ;
