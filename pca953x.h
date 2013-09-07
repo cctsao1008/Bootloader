@@ -1,3 +1,15 @@
+/****************************************************************************
+ *
+ *   Copyright (C) 2012, 2013 TMR Development Team. All rights reserved.
+ *
+ *   Author : CHIA-CHENG, TSAO
+ *
+ *   E-Mail : chiacheng.tsao@gmail.com
+ *
+ *   Date :07/09/2013
+ *
+ ****************************************************************************/
+
 /*
  *
  * NXP PCA953X Driver header
