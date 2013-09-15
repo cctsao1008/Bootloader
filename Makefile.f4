@@ -33,23 +33,17 @@ SRCS		+= pca953x.c
 endif
 
 FLAGS		+= -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
-			-DSTM32F4 \
-			-DBOOTLOADER_DELAY=$(PX4_BOOTLOADER_DELAY) \
-			-DBOARD_$(BOARD) \
-			-DINTERFACE_$(INTERFACE) \
-			-DUSBDEVICESTRING="$(USBDEVICESTRING)" \
-			-DUSBPRODUCTID="$(USBPRODUCTID)" \
-			-Tstm32f4.ld \
-			-L$(LIBOPENCM3)/lib/stm32/f4/ \
-			-lopencm3_stm32f4 \
-
-ifeq ($(BOARD),FC)
-FLAGS		+= -DAPP_LOAD_ADDRESS=0x08010000 \
-			-DAPP_SIZE_MAX=0xf0000
-else
-FLAGS		+= -DAPP_LOAD_ADDRESS=0x08004000 \
-			-DAPP_SIZE_MAX=0xfc000
-endif
+		   -DSTM32F4 \
+		   -DAPP_LOAD_ADDRESS=0x08004000 \
+		   -DAPP_SIZE_MAX=0xfc000 \
+		   -DBOOTLOADER_DELAY=$(PX4_BOOTLOADER_DELAY) \
+		   -DBOARD_$(BOARD) \
+		   -DINTERFACE_$(INTERFACE) \
+		   -DUSBDEVICESTRING="$(USBDEVICESTRING)" \
+		   -DUSBPRODUCTID="$(USBPRODUCTID)" \
+		   -Tstm32f4.ld \
+		   -L$(LIBOPENCM3)/lib/stm32/f4/ \
+		   -lopencm3_stm32f4 \
 
 ELF		 = $(PRODUCT).elf
 BINARY		 = $(PRODUCT).bin

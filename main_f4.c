@@ -28,21 +28,15 @@ static struct {
     unsigned    size;
 } flash_sectors[] = {
     /* flash sector zero reserved for bootloader */
-    #if 0
-    { FLASH_SECTOR_0,   16 * 1024},
-    #endif
-    /* flash sector one, two and three reserved for emulated EEPROM */
-    #ifndef BOARD_FC
-    { FLASH_SECTOR_1,   16 * 1024},
-    { FLASH_SECTOR_2,   16 * 1024},
-    { FLASH_SECTOR_3,   16 * 1024},
-    #endif
-    { FLASH_SECTOR_4,   64 * 1024},
-    { FLASH_SECTOR_5,  128 * 1024},
-    { FLASH_SECTOR_6,  128 * 1024},
-    { FLASH_SECTOR_7,  128 * 1024},
-    { FLASH_SECTOR_8,  128 * 1024},
-    { FLASH_SECTOR_9,  128 * 1024},
+    { FLASH_SECTOR_1, 16 * 1024},
+    { FLASH_SECTOR_2, 16 * 1024},
+    { FLASH_SECTOR_3, 16 * 1024},
+    { FLASH_SECTOR_4, 64 * 1024},
+    { FLASH_SECTOR_5, 128 * 1024},
+    { FLASH_SECTOR_6, 128 * 1024},
+    { FLASH_SECTOR_7, 128 * 1024},
+    { FLASH_SECTOR_8, 128 * 1024},
+    { FLASH_SECTOR_9, 128 * 1024},
     { FLASH_SECTOR_10, 128 * 1024},
     { FLASH_SECTOR_11, 128 * 1024}
 };
